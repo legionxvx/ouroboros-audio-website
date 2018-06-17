@@ -1,0 +1,454 @@
+import requests, time, random, copy, httplib2
+import Tkinter as tk
+import tkMessageBox
+from flask import Flask, render_template, request
+from time import sleep
+from requests import get, Request, Session
+from Tkinter import *
+from apiclient.discovery import build, HttpError
+from httplib2 import Http
+from oauth2client import file, client, tools
+from oauth2client.clientsecrets import InvalidClientSecretsError
+
+app = Flask(__name__)
+app.run(debug=True)
+
+SportsRadar_API_Key = ''
+
+class SportsRadarService:
+	#for handling sportsradar API calls
+	def __init__(self, SPORTSRADAR_API_KEY):
+		self.raw_request_data  = {} #class table for referencing all request json data
+		self.ranks       = {}
+		self.apiCalls    = 0
+		self.session     = Session()
+		self.agent       = {"user-agent": "cfb-sheets-writer-script"}
+		self.init_params = {'limit':'9999999', 'api_key': SPORTSRADAR_API_KEY}
+		self.session.headers.update(self.agent)
+		self.session.params.update(self.init_params)
+
+	def get_games(self, season, week):
+		try:
+			response = self.session.get("http://api.sportradar.us/ncaafb-t1/" + str(season) + "/REG/" + str(week) + "/schedule.json?").json()
+		except ValueError:
+			tkMessageBox.showerror('err', 'Invalid API Key for SportsRadar Calls, or no json was returned')
+			self.apiCalls += 1
+			return False
+		self.raw_request_data['game_data_json'] = response
+		sleep(1)
+		self.apiCalls += 1
+		return response['games'] if 'games' in response.keys() else response
+
+	def get_ranks(self, season, week):
+		poll     = "AP25" if week < 10 else "CFP25"
+		try:
+			response = self.session.get("http://api.sportradar.us/ncaafb-t1/polls/" + str(poll) + "/" + str(season) + "/" + str(week) + "/rankings.json?").json()
+		except ValueError:
+			tkMessageBox.showerror('err', 'Invalid API Key for SportsRadar Calls, or no json was returned')
+			self.apiCalls += 1
+			return False
+		self.raw_request_data['poll_data_json'] = response
+		sleep(1)
+		self.apiCalls += 1
+		if not('rankings' in response.keys()):
+
+			return False
+
+		else:
+
+			for team in response['rankings']:
+				self.ranks[team['id']] = team['rank']
+
+			return self.ranks
+
+	def get_team_hierarchy(self, division):
+		try:
+			response = self.session.get("http://api.sportradar.us/ncaafb-t1/teams/" + str(division) + "/hierarchy.json?").json()
+		except ValueError:
+			tkMessageBox.showerror('err', 'Invalid API Key for SportsRadar Calls, or no json was returned')
+			self.apiCalls += 1
+			return False
+		self.raw_request_data['team_hierarchy_json'] = response
+		sleep(1)
+		self.apiCalls += 1
+		return response
+
+	def __del__(self):
+		print('%s deconstructed' % (self))
+
+class SheetScribeService:
+	#Google sheets wriiiiiiiterrrrrr, Google Sheets wriiiiiiiterrrr
+	def __init__(self, sheet_id, scope, apiKey):
+		self.spreadsheetId = sheet_id
+		self.storage       = file.Storage('credentials.json')
+		self.creds         = self.storage.get()
+		self.scope         = scope
+
+		if not self.creds or self.creds.invalid:
+			try:
+				self.flow  = client.flow_from_clientsecrets('client_secret.json', self.scope)
+				self.creds = tools.run_flow(self.flow, self.storage)
+			except InvalidClientSecretsError:
+				tkMessageBox.showerror('err', 'Invalid OAuth2 and Client Secret credentials')
+				self.auth = False
+				return
+
+
+		self.GoogleSheetsService = build('sheets', 'v4', http=self.creds.authorize(Http()))
+		self.sheetPtr            = self.GoogleSheetsService.spreadsheets().values()
+
+	def get_sheet_values(self, sheet):
+		response        = self.sheetPtr.get(spreadsheetId=self.spreadsheetId,range=str(sheet)).execute()
+		sleep(0.25)
+		return response
+
+	def get_range_values(self, sheet, range):
+		requested_range = str(sheet) + '!' + str(range)
+		response        = self.sheetPtr.get(spreadsheetId=self.spreadsheetId,range=requested_range).execute()
+		sleep(0.25)
+		return response
+
+	def write_column_range_values(self, sheet, range, values):
+		print("Writing:", values, 'in range:', range, 'majorDimension=columns')
+		requested_range = str(sheet) + '!' + str(range)
+		response        = self.sheetPtr.update(spreadsheetId=self.spreadsheetId,range=requested_range,valueInputOption='USER_ENTERED',body={'values':values, 'majorDimension':'columns'}).execute()
+		sleep(0.25)
+		return response
+
+	def write_row_range_values(self, sheet, range, values):
+		print("Writing:", values, 'in range:', range, ', majorDimension=rows')
+		requested_range = str(sheet) + '!' + str(range)
+		response        = self.sheetPtr.update(spreadsheetId=self.spreadsheetId,range=requested_range,valueInputOption='USER_ENTERED',body={'values':values}).execute()
+		sleep(0.25)
+		return response
+
+	def __del__(self):
+		print('%s deconstructed' % (self))
+
+class Game:
+
+	FBS_TEAMS = {'WF': 'Wake Forest', 'GST': 'Georgia State', 'LIB': 'Liberty',
+	'BC': 'Boston College', 'MFL': 'Miami (FL)', 'BGN': 'Bowling Green', 'MIZ': 'Missouri',
+	'NAV': 'Navy', 'MICH': 'Michigan', 'MIS': 'Ole Miss', 'BOISE': 'Boise State', 'GSO': 'Georgia Southern',
+	'OHI': 'Ohio', 'IOW': 'Iowa', 'SAB': 'South Alabama', 'AUB': 'Auburn', 'MIN': 'Minnesota', 'UAB': 'UAB',
+	'PIT': 'Pittsburgh', 'ILL': 'Illinois', 'CHA': 'Charlotte', 'GT': 'Georgia Tech', 'VAN': 'Vanderbilt',
+	'FIU': 'Florida International', 'BYU': 'Brigham Young', 'TXAM': 'Texas A&M', 'WMC': 'Western Michigan',
+	'KNT': 'Kent State', 'HAW': 'Hawaii', 'MAR': 'Maryland', 'NIL': 'Northern Illinois', 'APP': 'Appalachian State',
+	'KAN': 'Kansas', 'SYR': 'Syracuse', 'RICE': 'Rice', 'KST': 'Kansas State', 'EMC': 'Eastern Michigan',
+	'CMC': 'Central Michigan', 'BAMA': 'Alabama', 'TSA': 'Tulsa', 'NEV': 'Nevada', 'FLA': 'Florida', 'UGA': 'Georgia',
+	'TCU': 'TCU', 'OSU': 'Ohio State', 'TXST': 'Texas State', 'WVU': 'West Virginia', 'LSU': 'Louisianna State', 'UCONN': 'Connecticut',
+	'UVA': 'Virginia', 'BUF': 'Buffalo', 'TRY': 'Troy', 'CSU': 'Colorado State', 'NM': 'New Mexico', 'OKS': 'Oklahoma State',
+	'TEN': 'Tennessee', 'TUL': 'Tulane', 'MOH': 'Miami (OH)', 'RUT': 'Rutgers', 'UMASS': 'Massachusetts', 'OKL': 'Oklahoma',
+	'PSU': 'Penn State', 'AKR': 'Akron', 'SMU': 'Southern Methodist', 'ULM': 'Louisiana-Monroe', 'NEB': 'Nebraska', 'ISU': 'Iowa State',
+	'FSU': 'Florida State', 'WYO': 'Wyoming', 'COL': 'Colorado', 'TEM': 'Temple', 'ASU': 'Arizona State', 'NC': 'North Carolina',
+	'ND': 'Notre Dame', 'ODU': 'Old Dominion', 'TEX': 'Texas', 'ECU': 'East Carolina', 'TEP': 'UTEP', 'MSU': 'Michigan State',
+	'NW': 'Northwestern', 'BALL': 'Ball State', 'CAL': 'California', 'FRE': 'Fresno State', 'CC': 'Coastal Carolina', 'CLE': 'Clemson',
+	'UNLV': 'UNLV', 'WAS': 'Washington', 'NTX': 'North Texas', 'NMS': 'New Mexico State', 'MEM': 'Memphis', 'UCLA': 'UCLA',
+	'MSST': 'Mississippi State', 'WIS': 'Wisconsin', 'SC': 'South Carolina', 'ORE': 'Oregon', 'PUR': 'Purdue', 'USF': 'South Florida',
+	'USC': 'South California', 'USM': 'Southern Miss', 'MSH': 'Marshall', 'CIN': 'Cincinnati', 'BAY': 'Baylor', 'DUK': 'Duke', 'WST': 'Washington State',
+	'TOL': 'Toledo', 'LOU': 'Louisville', 'TT': 'Texas Tech', 'FAU': 'Florida Atlantic', 'UCF': 'UCF', 'LT': 'Louisiana Tech',
+	'UTSA': 'UTSA', 'SJS': 'San Jose State', 'ARKS': 'Arkansas State', 'STA': 'Stanford', 'AF': 'Air Force', 'MTS': 'Middle Tennessee',
+	'UTH': 'Utah', 'IU': 'Indiana', 'UTS': 'Utah State', 'HOU': 'Houston', 'VT': 'Virginia Tech', 'ULL': 'Louisiana-Lafayette',
+	'ORS': 'Oregon State', 'NCST': 'North Carolina State', 'SDSU': 'San Diego State', 'WKY': 'Western Kentucky', 'ARI': 'Arizona',
+	'ARK': 'Arkansas', 'ARM': 'Army', 'KEN': 'Kentucky'
+	}
+
+	FCS_TEAMS = {'WC': 'Western Carolina', 'HAMP': 'Hampton', 'WM': 'William & Mary', 'DRT': 'Dartmouth', 'JM': 'James Madison',
+	'CCH': 'Charleston Southern', 'NAT': 'North Carolina A&T', 'UNI': 'Northern Iowa', 'NAZ': 'Northern Arizona', 'CPS': 'Cal Poly',
+	'ALCST': 'Alcorn State', 'SIL': 'Southern Illinois', 'SAM': 'Samford', 'MUR': 'Murray State', 'PRI': 'Princeton',
+	'JAC': 'Jacksonville', 'RIL': 'Rhode Island', 'PRV': 'Prairie View A&M', 'RM': 'Robert Morris', 'UMAINE': 'Maine',
+	'SAU': 'Stephen F. Austin', 'VAL': 'Valparaiso', 'JVS': 'Jacksonville State', 'FAMU': 'Florida A&M', 'CHT': 'Chattanooga',
+	'HAR': 'Harvard', 'SVS': 'Savannah State', 'LAM': 'Lamar', 'APY': 'Austin Peay', 'NIC': 'Nicholls State', 'LAF': 'Lafayette',
+	'VIL': 'Villanova', 'APB': 'Arkansas-Pine Bluff', 'TSO': 'Texas Southern', 'FUR': 'Furman', 'ACU': 'Abilene Christian',
+	'SDS': 'South Dakota State', 'CMB': 'Columbia', 'DRA': 'Drake', 'GTOWN': 'Georgetown', 'DEL': 'Delaware', 'HB': 'Houston Baptist',
+	'HC': 'Holy Cross', 'YSU': 'Youngstown State', 'SCH': 'Sacred Heart', 'NWS': 'Northwestern State', 'BUT': 'Butler', 'MNM': 'Monmouth',
+	'BUC': 'Bucknell', 'SCS': 'South Carolina State', 'SHS': 'Sam Houston State', 'FOR': 'Fordham', 'DLS': 'Delaware State',
+	'NFS': 'Norfolk State', 'GRA': 'Grambling State', 'EW': 'Eastern Washington', 'WOF': 'Wofford', 'TNST': 'Tennessee State',
+	'STU': 'Stetson', 'MOS': 'Montana State', 'MOR': 'Morehead State', 'KENN': 'Kennesaw State', 'MGN': 'Morgan State', 'COR': 'Cornell',
+	'CSUS': 'Sacramento State', 'GWB': 'Gardner-Webb', 'IDS': 'Idaho State', 'PEN': 'Pennsylvania', 'SUT': 'Southern Utah',
+	'ILS': 'Illinois State', 'EKY': 'Eastern Kentucky', 'BCU': 'Bethune-Cookman', 'IDA': 'Idaho', 'NH': 'New Hampshire', 'MONT': 'Montana',
+	'JST': 'Jackson State', 'CCSU': 'Central Connecticut State', 'SEM': 'Southeast Missouri State', 'SEL': 'Southeastern Louisiana',
+	'CGT': 'Colgate', 'MVS': 'Mississippi Valley State', 'ELO': 'Elon', 'WAG': 'Wagner', 'UNA': 'North Alabama', 'UND': 'North Dakota',
+	'DUQ': 'Duquesne', 'NDS': 'North Dakota State', 'NOCO': 'Northern Colorado', 'BRY': 'Bryant University', 'VMI': 'Virginia Military Institute',
+	'LEI': 'Lehigh', 'WIL': 'Western Illinois', 'ALB': 'Albany', 'SU': 'Southern University', 'BRN': 'Brown', 'MER': 'Mercer',
+	'SBK': 'Stony Brook', 'PRES': 'Presbyterian', 'SD': 'South Dakota', 'WBS': 'Weber State', 'AAM': 'Alabama A&M', 'MST': 'Marist',
+	'TWN': 'Towson', 'PRST': 'Portland State', 'RCH': 'Richmond', 'CAM': 'Campbell', 'CIT': 'Citadel', 'EIL': 'Eastern Illinois',
+	'DAV': 'Davidson', 'UCD': 'UC Davis', 'UCA': 'Central Arkansas', 'MIZST': 'Missouri State', 'DAY': 'Dayton', 'TNT': 'Tennessee Tech',
+	'STF': 'St. Francis (PA)', 'IW': 'Incarnate Word', 'HOW': 'Howard', 'ETSU': 'East Tennessee State', 'TNM': 'Tennessee-Martin',
+	'MCN': 'McNeese State', 'INDS': 'Indiana State', 'YAL': 'Yale', 'SDG': 'San Diego', 'ALAST': 'Alabama State', 'NCC': 'North Carolina Central'
+	}
+
+	#for organizing game data
+	def __init__(self, game, rankings):
+		print(game)
+		self.home_acr    = game['home']
+		self.away_acr    = game['away']
+		self.home_team   = self.lookup_full_name(game['home'])
+		self.away_team   = self.lookup_full_name(game['away'])
+		self.gameStatus  = game['status']
+		self.gameTime    = self.format_time(game['scheduled'])
+		self.awayRank    = 'U'
+		self.homeRank    = 'U'
+		self.home_points = game['home_points'] if 'home_points' in game.keys() else ''
+		self.away_points = game['away_points'] if 'away_points' in game.keys() else ''
+		self.isImportant = True if 'title' in game.keys() else False
+		self.isRanked    = True if (not(rankings)) or (self.home_acr in rankings.keys()) or (self.away_acr in rankings.keys()) else False
+
+		if self.isRanked and rankings:
+			self.awayRank = str(rankings[self.away_acr]) if (self.away_acr in rankings.keys()) else 'U'
+			self.homeRank = str(rankings[self.home_acr]) if (self.home_acr in rankings.keys()) else 'U'
+
+	#@ToDo: Implement this
+	def format_time(self, unformatted):
+		print(unformatted)
+		formatted = unformatted[0:16]
+		return formatted
+
+	def lookup_full_name(self, acronym):
+
+		if acronym in self.FBS_TEAMS.keys():
+			return self.FBS_TEAMS[acronym]
+		elif acronym in self.FCS_TEAMS.keys():
+			return self.FCS_TEAMS[acronym]
+		else:
+			return acronym
+
+	def __del__(self):
+		print('%s deconstructed' % (self))
+
+class FakeGame:
+	#for testing
+	FBS_TEAMS = {'AF':'Air Force', 'AKRN':'Akron',
+	'BAMA':'Alabama', 'UAB':'Alabama-Birmingham', 'ARIZ':'Arizona',
+	'ARST':'Arkansas St.', 'ARMY':'Army', 'AUB':'Auburn',
+	'BALL':'Ball St.', 'BAY':'Baylor', 'BOISE':'Boise St.',
+	'BC':'Boston College', 'BG':'Bowling Green', 'BYU':'Brigham Young',
+	'BUF':'Buffalo', 'CAL':'California', 'UCF':'Central Florida',
+	'CMU':'Central Michigan', 'CIN':'Cincinnati', 'CLEM':'Clemson',
+	'COL':'Colorado', 'CSU':'Colorado St.', 'CONN':'Connecticut',
+	'DUKE':'Duke', 'ECU':'East Carolina', 'EMU':'Eastern Michigan',
+	'UF':'	Florida', 'FAU':'Florida Atlantic', 'FIU':'Florida International',
+	'FSU':'Florida St.', 'FRSNO':'Fresno St.', 'UGA':'Georgia',
+	'GTECH':'Georgia Tech', 'HAW':'Hawaii', 'HOU':'Houston',
+	'IDAHO':'Idaho', 'ILL':'Illinois', 'IND':'Indiana',
+	'IOWA':'Iowa', 'IAST':'Iowa St.', 'KAN':'Kansas',
+	'KSST':'Kansas St.', 'KENT':'Kent St.', 'UK':'Kentucky',
+	'LSU':'Louisiana St.', 'LTECH':'Louisiana Tech', 'ULL':'Louisiana-Lafayette',
+	'ULM':'Louisiana-Monroe', 'LOU':'Louisville', 'MRSHL':'Marshall',
+	'MARY':'Maryland', 'MASS':'Massachusetts', 'MEM':'Memphis',
+	'MIAF':'Miami (FL)', 'MIAO':'Miami (OH)', 'MICH':'Michigan',
+	'MIST':'Michigan St.', 'MTENN':'Middle Tennessee', 'MINN':'Minnesota',
+	'MISS':'Mississippi', 'MSST':'Mississippi St.', 'MIZZ':'Missouri',
+	'NAVY':'Navy', 'NEB':'Nebraska', 'NEV':'Nevada',
+	'UNLV':'Nevada-Las Vegas', 'UNM':'New Mexico', 'NMST':'New Mexico St.',
+	'UNC':'North Carolina', 'NCST':'North Carolina St.', 'NTEX':'North Texas',
+	'NILL':'Northern Illinois', 'NWEST':'Northwestern', 'NDAME':'Notre Dame',
+	'OHIO':'Ohio', 'OHST':'Ohio St.', 'OKST':'Oklahoma St.',
+	'OREG':'Oregon', 'ORST':'Oregon St.', 'PSU':'Penn St.',
+	'PITT':'Pittsburgh', 'PURD':'Purdue', 'RICE':'Rice',
+	'RUTG':'Rutgers', 'SDSU':'San Diego St.', 'SJSU':'San Jose St.',
+	'SBAMA':'South Alabama', 'SCAR':'South Carolina', 'USF':'South Florida',
+	'SCAL':'Southern California', 'SMU':'Southern Methodist', 'SMISS':'Southern Mississippi',
+	'STAN':'Stanford', 'SYR':'Syracuse', 'TMPLE':'Temple',
+	'TENN':'Tennessee', 'TEX':'Texas', 'TXAM':'Texas A&M',
+	'TCU':'Texas Christian', 'TXST':'Texas St.', 'TTECH':'Texas Tech',
+	'UTEP':'Texas-El Paso', 'UTSA':'Texas-San Antonio', 'TOL':'Toledo',
+	'TROY':'Troy', 'TLNE':'Tulane', 'TULSA':'Tulsa',
+	'UCLA':'UCLA ', 'UTAH':'Utah', 'UTST':'Utah St.',
+	'VAND':'Vanderbilt', 'UVA':'Virginia', 'VTECH':'Virginia Tech',
+	'WAKE':'Wake Forest', 'WASH':'Washington', 'WSU':'Washington St.',
+	'WVU':'West Virginia', 'WKU':'Western Kentucky', 'WMU':'Western Michigan',
+	'WIS':'Wisconsin', 'WYO':'Wyoming'
+	}
+
+	def __init__(self):
+
+		self.FBS_TEAMS_COPY   = copy.copy(self.FBS_TEAMS)
+		self.home_team_choice = random.choice(self.FBS_TEAMS_COPY.keys())
+		# ensures a unique choice by removing home team from dict
+		del self.FBS_TEAMS_COPY[self.home_team_choice]
+		self.away_team_choice = random.choice(self.FBS_TEAMS_COPY.keys())
+
+		self.home_team   = self.lookup_full_name(self.home_team_choice)
+		self.away_team   = self.lookup_full_name(self.away_team_choice)
+		self.gameStatus  = 'scheduled'
+		self.gameTime    = 'future'
+		self.isImportant = False
+		self.isRanked    = True
+		self.homeRank    = str(random.randint(1, 25)) if random.randint(0,10) % 10 else 'U'
+		self.awayRank    = str(random.randint(1, 25)) if random.randint(0,10) % 10 else 'U'
+		self.home_points = self.fake_score(self.homeRank)
+		self.away_points = self.fake_score(self.awayRank)
+
+	def lookup_full_name(self, acronym):
+
+		if acronym in self.FBS_TEAMS.keys():
+			return self.FBS_TEAMS[acronym]
+		else:
+			return acronym
+
+	def fake_score(self, rank):
+
+		if rank >= 10:
+			points_from_td  = random.randint(0, 8) * 7 if not(random.randint(0, 5) % 5) else random.randint(0, 5) * 7
+		else:
+			points_from_td  = random.randint(0, 5) * 7
+
+		points_from_fg      = random.randint(0, 4) * 3
+		points_from_safties = random.randint(0, 3) * 2 if not(random.randint(1, 10) % 10) else 0
+
+		return points_from_td + points_from_fg + points_from_safties
+
+	def __del__(self):
+		print('%s deconstructed' % (self))
+
+@app.route("/")
+def render_from_fake_games(name=None):
+
+	for i in range(20):
+
+		game_instance= FakeGame()
+
+		if (game_instance.isImportant) or (game_instance.isRanked):
+
+			return "<h1>running</h1>"
+
+def build_from_games(scribe_write):
+
+	scribe          = SheetScribeService(score_window.spreadhseet_id, 'https://www.googleapis.com/auth/spreadsheets', None)
+	radar_service   = SportsRadarService(SportsRadar_API_Key)
+	games           = radar_service.get_games(score_window.season, score_window.week)
+	rankings        = radar_service.get_ranks(score_window.season, score_window.week)
+
+	if not(games) or not(scribe.auth):
+		#@ToDo: Generate fake games anyways??
+		#games = {}
+		#for i in range(0, 24):
+		#	games[i] = FakeGame()
+		return
+
+	row, x = 0, 3 #row increment starts at 0, our sheet row increment starts at Col B: Row 3
+	for game in games:
+
+		game_instance = Game(game, radar_service.ranks)
+
+		if (game_instance.isImportant) or (game_instance.isRanked):
+
+			#create an empty dict in our class' tables for storing
+			#frames and score entry fields
+			#All labels should have a fixed width, for neatness
+			score_window.score_entries[row] = {}
+			score_window.score_frames[row]  = {}
+			score_window.score_frames[row]  = Frame(score_window.bottom_frame, relief=RAISED, borderwidth=1)
+			score_window.score_frames[row].pack(fill=BOTH, expand=True)
+
+			#our current frame, used to dispatch sub frames inside
+			new_row_frame = score_window.score_frames[row]
+
+			#Game Status and Away Team
+			away_label_frame = Frame(new_row_frame)
+			away_label_frame.pack(fill=BOTH, side=LEFT, padx=2)
+			Label(away_label_frame, text=game_instance.gameStatus, width=15).pack(side=LEFT, padx=2)
+			Label(away_label_frame, text=game_instance.away_team + " (" + game_instance.awayRank + ")", width=20).pack(side=LEFT, padx=2)
+
+			#Away Team Entry, these need to get packed into our
+			#entries table for referencing later
+			away_entry_frame = Frame(new_row_frame)
+			away_entry_frame.pack(fill=BOTH, side=LEFT, padx=2)
+			score_window.score_entries[row][0] = Entry(away_entry_frame)
+			score_window.score_entries[row][0].pack(fill=BOTH, side=LEFT, padx=2)
+			score_window.score_entries[row][0].insert(END, game_instance.away_points)
+
+			#Versus Label, could be put in a different frame
+			vs_frame = Frame(new_row_frame)
+			vs_frame.pack(side=LEFT,padx=5)
+			Label(vs_frame, text="VS.", width=2).pack(fill=BOTH, padx=2)
+
+			#Home Team Entry, these need to get packed into our
+			#entries table for referencing later
+			home_entry_frame = Frame(new_row_frame)
+			home_entry_frame.pack(fill=BOTH, side=LEFT, padx=2)
+			score_window.score_entries[row][1] = Entry(home_entry_frame)
+			score_window.score_entries[row][1].pack(fill=BOTH, side=RIGHT)
+			score_window.score_entries[row][1].insert(END, game_instance.home_points)
+
+			#Home Team Label and the games scheduled time
+			home_label_frame = Frame(new_row_frame)
+			home_label_frame.pack(fill=BOTH, side=LEFT, padx=2, expand=True)
+			Label(home_label_frame, text=game_instance.home_team + " (" + game_instance.homeRank + ")", width=20).pack(side=LEFT, padx=2)
+			Label(home_label_frame, text=game_instance.gameTime, width=20).pack(fill=BOTH, padx=2)
+
+			write_row_update_data = [[game_instance.awayRank, game_instance.away_team, '', '', game_instance.homeRank, game_instance.home_team, '']]
+
+			if scribe_write:
+				try:
+					scribe.write_row_range_values(score_window.name, 'B' + str(x), write_row_update_data)
+				except HttpError:
+					tkMessageBox.showerror("HttpErr:", "Couldn't write to Google sheet")
+					return
+
+			row += 1
+			x   += 1
+
+	#queue window for updating
+	score_window.master.update_idletasks()
+	print("Finished building Score Window. API Calls made: %s." % (radar_service.apiCalls))
+
+def write_score_data():
+	away_scores = []
+	home_scores = []
+	for entry in score_window.score_entries:
+		a = score_window.score_entries[entry][0].get()
+		h = score_window.score_entries[entry][1].get()
+		away_scores.append(a)
+		home_scores.append(h)
+	away_score_payload = [away_scores]
+	home_score_payload = [home_scores]
+
+	scribe = SheetScribeService(score_window.spreadhseet_id, 'https://www.googleapis.com/auth/spreadsheets', None)
+
+	scribe.write_column_range_values(score_window.name, 'D3', away_score_payload)
+	scribe.write_column_range_values(score_window.name, 'H3', home_score_payload)
+
+@app.route("/")
+@app.route("/football/")
+def football():
+	sq=[]
+	scribe = SheetScribeService('1r_kgK6WNvCIgNT3Mkz84MJXOfFPqAdrvv3g6m1bmdSI', 'https://www.googleapis.com/auth/spreadsheets', None)
+	x = 3
+	for i in range(20):
+
+		game_instance= FakeGame()
+		sq.append(game_instance)
+
+		write_row_update_data = [[game_instance.awayRank, game_instance.away_team, '', '', game_instance.homeRank, game_instance.home_team, '']]
+		scribe.write_row_range_values("Nik", 'B' + str(x), write_row_update_data)
+		x += 1
+
+
+	return render_template('flask.html', seq=sq, response="none")
+
+@app.route("/football_post", methods=['GET', 'POST'])
+def football_post():
+		away_scores = []
+		home_scores = []
+		if request.method == "POST":
+			print("--------POST--------")
+			for i in range(0, 20):
+				home = request.form['home_'+str(i)]
+				away = request.form['away_'+str(i)]
+				away_scores.append(away)
+				home_scores.append(home)
+				print( "AWAY", away, "HOME: ", home)
+			away_score_payload = [away_scores]
+			home_score_payload = [home_scores]
+			scribe = SheetScribeService('1r_kgK6WNvCIgNT3Mkz84MJXOfFPqAdrvv3g6m1bmdSI', 'https://www.googleapis.com/auth/spreadsheets', None)
+			scribe.write_column_range_values("Nik", 'D3', away_score_payload)
+			scribe.write_column_range_values("Nik", 'H3', home_score_payload)
+			#for key in request.form.keys():
+			#	print(key)
+			#	for value in request.form.getlist(key):
+			#		print(key, ":", value)
+			return "response POSTED"
+		else:
+			return "response NOT POSTED"

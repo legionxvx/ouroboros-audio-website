@@ -5,9 +5,8 @@ ouroboros.audio/*.sublime-*
 
 #CLIENT SECRETS#
 ################
-
-ouroboros.audio/includes/flask/*.json
+flask/*.json
 
 #FLASK EXPORT#
 ##############
-ouroboros.audio/includes/flask/*.pyc
+flask/*.pyc
