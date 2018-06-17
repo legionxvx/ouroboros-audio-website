@@ -1,3 +1,9 @@
 # SUBLIME PROJs #
 #################
 ouroboros.audio/*.sublime-*
+
+
+#CLIENT SECRETS#
+################
+
+ouroboros.audio/includes/flask/*.json
