@@ -15,6 +15,14 @@ app.run(debug=True)
 
 SportsRadar_API_Key = ''
 
+FUNNY_PHRASES = ["Go Dawgs!", "Don't worry, we're all champions of life.", "All aboard the Gus Bus!", "D I L L Y D I L L Y.",
+"Shark Lovers Only.", "This program is approved by Joey Freshwater.", "Five Star Hearts ONLY.", "*Dooley takes note*", "7-3 Rutgers.",
+"M 0 - 0 N", "M 0w0 N... whats this.", "Verne Lundquist: Oh no!", "Gary: Notice Me Saban.", "All Alabama has on the field is fat guys.",
+"Sam Darnold wouldn't want it any other way.", "You know who would've made a great CFB Quaterback? Brett Farve.", "OwO what's this.",
+"Beat the War-tigle crap out of em'.", "UCF: 2017-8 National Champions.", "Les Miles is eating grass again.", "The kicker got ejected for targeting.",
+"We want BAMA.", "Vandy wanted Bama, Vandy got Bama.", "Missouri belongs in the SEC.", "Troy > LSU > Auburn > Bama.", "Like they say, it's an ongoing investigation."
+]
+
 class SportsRadarService:
 	#for handling sportsradar API calls
 	def __init__(self, SPORTSRADAR_API_KEY):
@@ -313,103 +321,6 @@ def render_from_fake_games(name=None):
 
 			return "<h1>running</h1>"
 
-def build_from_games(scribe_write):
-
-	scribe          = SheetScribeService(score_window.spreadhseet_id, 'https://www.googleapis.com/auth/spreadsheets', None)
-	radar_service   = SportsRadarService(SportsRadar_API_Key)
-	games           = radar_service.get_games(score_window.season, score_window.week)
-	rankings        = radar_service.get_ranks(score_window.season, score_window.week)
-
-	if not(games) or not(scribe.auth):
-		#@ToDo: Generate fake games anyways??
-		#games = {}
-		#for i in range(0, 24):
-		#	games[i] = FakeGame()
-		return
-
-	row, x = 0, 3 #row increment starts at 0, our sheet row increment starts at Col B: Row 3
-	for game in games:
-
-		game_instance = Game(game, radar_service.ranks)
-
-		if (game_instance.isImportant) or (game_instance.isRanked):
-
-			#create an empty dict in our class' tables for storing
-			#frames and score entry fields
-			#All labels should have a fixed width, for neatness
-			score_window.score_entries[row] = {}
-			score_window.score_frames[row]  = {}
-			score_window.score_frames[row]  = Frame(score_window.bottom_frame, relief=RAISED, borderwidth=1)
-			score_window.score_frames[row].pack(fill=BOTH, expand=True)
-
-			#our current frame, used to dispatch sub frames inside
-			new_row_frame = score_window.score_frames[row]
-
-			#Game Status and Away Team
-			away_label_frame = Frame(new_row_frame)
-			away_label_frame.pack(fill=BOTH, side=LEFT, padx=2)
-			Label(away_label_frame, text=game_instance.gameStatus, width=15).pack(side=LEFT, padx=2)
-			Label(away_label_frame, text=game_instance.away_team + " (" + game_instance.awayRank + ")", width=20).pack(side=LEFT, padx=2)
-
-			#Away Team Entry, these need to get packed into our
-			#entries table for referencing later
-			away_entry_frame = Frame(new_row_frame)
-			away_entry_frame.pack(fill=BOTH, side=LEFT, padx=2)
-			score_window.score_entries[row][0] = Entry(away_entry_frame)
-			score_window.score_entries[row][0].pack(fill=BOTH, side=LEFT, padx=2)
-			score_window.score_entries[row][0].insert(END, game_instance.away_points)
-
-			#Versus Label, could be put in a different frame
-			vs_frame = Frame(new_row_frame)
-			vs_frame.pack(side=LEFT,padx=5)
-			Label(vs_frame, text="VS.", width=2).pack(fill=BOTH, padx=2)
-
-			#Home Team Entry, these need to get packed into our
-			#entries table for referencing later
-			home_entry_frame = Frame(new_row_frame)
-			home_entry_frame.pack(fill=BOTH, side=LEFT, padx=2)
-			score_window.score_entries[row][1] = Entry(home_entry_frame)
-			score_window.score_entries[row][1].pack(fill=BOTH, side=RIGHT)
-			score_window.score_entries[row][1].insert(END, game_instance.home_points)
-
-			#Home Team Label and the games scheduled time
-			home_label_frame = Frame(new_row_frame)
-			home_label_frame.pack(fill=BOTH, side=LEFT, padx=2, expand=True)
-			Label(home_label_frame, text=game_instance.home_team + " (" + game_instance.homeRank + ")", width=20).pack(side=LEFT, padx=2)
-			Label(home_label_frame, text=game_instance.gameTime, width=20).pack(fill=BOTH, padx=2)
-
-			write_row_update_data = [[game_instance.awayRank, game_instance.away_team, '', '', game_instance.homeRank, game_instance.home_team, '']]
-
-			if scribe_write:
-				try:
-					scribe.write_row_range_values(score_window.name, 'B' + str(x), write_row_update_data)
-				except HttpError:
-					tkMessageBox.showerror("HttpErr:", "Couldn't write to Google sheet")
-					return
-
-			row += 1
-			x   += 1
-
-	#queue window for updating
-	score_window.master.update_idletasks()
-	print("Finished building Score Window. API Calls made: %s." % (radar_service.apiCalls))
-
-def write_score_data():
-	away_scores = []
-	home_scores = []
-	for entry in score_window.score_entries:
-		a = score_window.score_entries[entry][0].get()
-		h = score_window.score_entries[entry][1].get()
-		away_scores.append(a)
-		home_scores.append(h)
-	away_score_payload = [away_scores]
-	home_score_payload = [home_scores]
-
-	scribe = SheetScribeService(score_window.spreadhseet_id, 'https://www.googleapis.com/auth/spreadsheets', None)
-
-	scribe.write_column_range_values(score_window.name, 'D3', away_score_payload)
-	scribe.write_column_range_values(score_window.name, 'H3', home_score_payload)
-
 @app.route("/")
 @app.route("/football/")
 def football():
@@ -417,7 +328,6 @@ def football():
 	scribe = SheetScribeService('1r_kgK6WNvCIgNT3Mkz84MJXOfFPqAdrvv3g6m1bmdSI', 'https://www.googleapis.com/auth/spreadsheets', None)
 	x = 3
 	for i in range(20):
-
 		game_instance= FakeGame()
 		sq.append(game_instance)
 
@@ -426,7 +336,7 @@ def football():
 		x += 1
 
 
-	return render_template('flask.html', seq=sq, response="none")
+	return render_template('flask.html', seq=sq, response="none", phrase=random.choice(FUNNY_PHRASES))
 
 @app.route("/football_post", methods=['GET', 'POST'])
 def football_post():

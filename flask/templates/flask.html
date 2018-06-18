@@ -5,6 +5,7 @@
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<link rel="stylesheet" type="text/css" href={{ url_for('static', filename='bootstrap.css') }} />
+		<link rel="stylesheet" type="text/css" href={{ url_for('static', filename='page.css') }} />
 		<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.13/css/all.css" integrity="sha384-DNOHZ68U8hZfKXOrtjWvjxusGo9WQnrNx2sqG0tfsghAvtVlRW3tvkXWZh58N9jp" crossorigin="anonymous">
 		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
 	</head>
@@ -12,21 +13,35 @@
 	<body>
 
 		<div class="container-fluid">
+			<div class="row-fluid row-centered">
+				<h1><b>{{phrase}}<b></h1>
+			</div>
 			<form action="/football_post" method="POST">
 				{% for game in seq %}
-		    		<div class='row pd10'>
+		    		<div class='row pd10' style="background-color: #E9E9E9; border-style: solid;">
+		    			<div class="col pd10">
+							{{game.gameStatus}}
+						</div>
+		    			<div class="col pd10">
+							{{game.awayRank}}
+						</div>
 						<div class="col pd10">
 							{{game.away_team}}
 						</div>
 						<div class="col pd10">
-							<input name="away_{{loop.index0}}" placeholder={{game.away_points}}></input>
+							<input name="away_{{loop.index0}}" value={{game.away_points}}></input>
+						</div>
+						<div class="col pd10">
+							<input name="home_{{loop.index0}}" value={{game.home_points}}></input>
 						</div>
 						<div class="col pd10">
 							{{game.home_team}}
 						</div>
-						<!--name="entry_{{game.home_team}}"-->
 						<div class="col pd10">
-							<input name="home_{{loop.index0}}" placeholder={{game.home_points}}></input>
+							{{game.homeRank}}
+						</div>
+						<div class="col pd10">
+							{{game.gameTime}}
 						</div>
 					</div>
 				{% endfor %}

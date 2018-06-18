@@ -5,7 +5,7 @@
 
 body {
 	background-color: #fff;
-	background-image: url("../images/bg.jpg");
+	/*background-image: url("../images/bg.jpg");*/
 	background-size: full;
 	background-position: top center;
 	-ms-overflow-style: scrollbar;
