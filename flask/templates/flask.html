@@ -16,6 +16,22 @@
 			<div class="row-fluid row-centered">
 				<h1><b>{{phrase}}<b></h1>
 			</div>
+
+			<div class="row">
+				<div class="col">
+					<b>Working on Spreadsheet:</b> {{sheet_id_truncated}}
+				</div>
+				<div class="col">
+					<b>Sub-Sheet:</b> {{sub_sheet}}
+				</div>
+				<div class="col">
+					<b>NCAA Season:</b> {{season}}
+				</div>
+				<div class="col">
+					<b>Week:</b> {{week}}
+				</div>
+			</div>
+
 			<form action="/football_post" method="POST">
 
 				<table class="table table-responsive table-dark table-bordered table-striped" style="text-align: center;">

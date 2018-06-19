@@ -326,10 +326,10 @@ class FakeGame:
 	def __del__(self):
 		print('%s deconstructed' % (self))
 
-def render_from_fake_games():
-	
+def render_from_fake_games(sheet_id, sheet_name, season, week):
+
 	#@ToDo Move writing names and ranks into /football_post function
-	scribe = SheetScribeService('1r_kgK6WNvCIgNT3Mkz84MJXOfFPqAdrvv3g6m1bmdSI', 'https://www.googleapis.com/auth/spreadsheets', None)
+	scribe = SheetScribeService(sheet_id, 'https://www.googleapis.com/auth/spreadsheets', None)
 	
 	fake_games = []
 	away_ranks = []
@@ -355,14 +355,22 @@ def render_from_fake_games():
 	home_ranks_payload = [home_ranks]
 	home_teams_payload = [home_teams]
 
-	scribe.write_column_range_values('Nik', 'B3', away_ranks_payload)
-	scribe.write_column_range_values('Nik', 'C3', away_teams_payload)
-	scribe.clear_column_values('Nik', 'D3:D1000')
-	scribe.clear_column_values('Nik', 'H3:E1000')
-	scribe.write_column_range_values('Nik', 'F3', home_ranks_payload)
-	scribe.write_column_range_values('Nik', 'G3', home_teams_payload)
+	scribe.write_column_range_values(sheet_name, 'B3', away_ranks_payload)
+	scribe.write_column_range_values(sheet_name, 'C3', away_teams_payload)
+	scribe.clear_column_values(sheet_name, 'D3:D1000')
+	scribe.clear_column_values(sheet_name, 'H3:E1000')
+	scribe.write_column_range_values(sheet_name, 'F3', home_ranks_payload)
+	scribe.write_column_range_values(sheet_name, 'G3', home_teams_payload)
 
-	return render_template('flask.html', seq=fake_games, response="none", phrase=random.choice(FUNNY_PHRASES))
+	return render_template('flask.html', 
+		seq=fake_games, 
+		response="none", 
+		phrase=random.choice(FUNNY_PHRASES),
+		sheet_id_truncated=sheet_id[0:5] + "...",
+		sub_sheet=sheet_name,
+		season=season,
+		week=week
+		)
 
 
 
@@ -392,9 +400,10 @@ def flask_post():
 		season     = request.form['SEASON']
 		week       = request.form['WEEK']
 
-		print(sheet_id, sheet_name, season, week)
+		print('ID: %s, Name: %s, Season: %s, Week: %s.' % (sheet_id, sheet_name, season, week))
 
-		return render_from_fake_games()
+		#@ToDo: Pass these in to the function.
+		return render_from_fake_games(sheet_id, sheet_name, season, week)
 
 
 	
