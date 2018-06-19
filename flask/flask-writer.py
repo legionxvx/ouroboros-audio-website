@@ -383,7 +383,7 @@ def setup_flask():
 	return render_template('setup.html')
 
 @FLASK_APP.route("/")
-@FLASK_APP.route("/setup_post", methods=['GET', 'POST'])
+@FLASK_APP.route("/ncaa-football/", methods=['GET', 'POST'])
 def flask_post():
 
 	if request.method == "POST":
