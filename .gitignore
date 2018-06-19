@@ -3,9 +3,10 @@
 ouroboros.audio/*.sublime-*
 
 
-#CLIENT SECRETS#
+#SECRETS#
 ################
 flask/*.json
+flask/sports-radar-api-key
 
 #FLASK EXPORT#
 ##############
