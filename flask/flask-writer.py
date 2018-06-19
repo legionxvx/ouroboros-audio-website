@@ -384,13 +384,15 @@ def setup_flask():
 
 @FLASK_APP.route("/")
 @FLASK_APP.route("/setup_post", methods=['GET', 'POST'])
-def lask_post():
+def flask_post():
 
 	if request.method == "POST":
 		sheet_id   = request.form['SPREADSHEETID']
 		sheet_name = request.form['SHEETNAME']
 		season     = request.form['SEASON']
 		week       = request.form['WEEK']
+
+		print(sheet_id, sheet_name, season, week)
 
 		return render_from_fake_games()
 

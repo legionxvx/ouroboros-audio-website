@@ -20,11 +20,43 @@
 			</div>
 
 			<form action="/setup_post" method="POST">
-				<input name="SPREADSHEETID"></input>
-				<input name="SHEETNAME"></input>
-				<input name="SEASON"></input>
-				<input name="WEEK"></input>
-				<input type="submit">
+				<div class="row">
+					<div class="col">
+						<div class="input-group mb-3">
+							<div class="input-group-prepend">
+						    	<span class="input-group-text" id="basic-addon1">Name:</span>
+							</div>
+							<input name="SHEETNAME" value="Nik" type="text" class="form-control" placeholder="Name" aria-label="Username" aria-describedby="basic-addon1">
+						</div>
+					</div>
+					<div class="col">
+						<div class="input-group mb-3">
+							<div class="input-group-prepend">
+						    	<span class="input-group-text" id="basic-addon1">Spreadsheet ID:</span>
+							</div>
+							<input name="SPREADSHEETID" value="1r_kgK6WNvCIgNT3Mkz84MJXOfFPqAdrvv3g6m1bmdSI" type="text" class="form-control" placeholder="Spreadsheet ID" aria-label="Sheet ID" aria-describedby="basic-addon1">
+						</div>
+					</div>
+				</div>
+				<div class="row">
+					<div class="col">
+						<div class="input-group mb-3">
+							<div class="input-group-prepend">
+						    	<span class="input-group-text" id="basic-addon1">Season:</span>
+							</div>
+							<input name="SEASON" value="2017" type="text" class="form-control" placeholder="Name" aria-label="Username" aria-describedby="basic-addon1">
+						</div>
+					</div>
+					<div class="col">
+						<div class="input-group mb-3">
+							<div class="input-group-prepend">
+						    	<span class="input-group-text" id="basic-addon1">Week:</span>
+							</div>
+							<input name="WEEK" value="1" type="text" class="form-control" placeholder="Spreadsheet ID" aria-label="Sheet ID" aria-describedby="basic-addon1">
+						</div>
+					</div>
+				</div>
+				<input type="submit" value="Onwards, to victory!">
 			</form>
 		</div>
 	</body>
