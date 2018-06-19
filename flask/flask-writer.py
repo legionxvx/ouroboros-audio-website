@@ -7,11 +7,9 @@ from httplib2 import Http
 from oauth2client import file, client, tools
 from oauth2client.clientsecrets import InvalidClientSecretsError
 
-app = Flask(__name__)
+FLASK_APP           = Flask(__name__)
 
-app.run(debug=True)
-
-SportsRadar_API_Key = open("sports-radar-api-key", "r").read()
+SPORTSRADAR_API_KEY = open("sports-radar-api-key", "r").read()
 
 FUNNY_PHRASES = ["Go Dawgs!", "Don't worry, we're all champions of life.", "All aboard the Gus Bus!", "D I L L Y D I L L Y.",
 "Shark Lovers Only.", "This program is approved by Joey Freshwater.", "Five Star Hearts ONLY.", "*Dooley takes note*", "7-3 Rutgers.",
@@ -23,13 +21,13 @@ FUNNY_PHRASES = ["Go Dawgs!", "Don't worry, we're all champions of life.", "All 
 
 class SportsRadarService:
 	#for handling sportsradar API calls
-	def __init__(self, SPORTSRADAR_API_KEY):
+	def __init__(self, sports_radar_api_key):
 		self.raw_request_data  = {} #class table for referencing all request json data
 		self.ranks       = {}
 		self.apiCalls    = 0
 		self.session     = Session()
 		self.agent       = {"user-agent": "cfb-sheets-writer-script"}
-		self.init_params = {'limit':'9999999', 'api_key': SPORTSRADAR_API_KEY}
+		self.init_params = {'limit':'9999999', 'api_key': sports_radar_api_key}
 		self.session.headers.update(self.agent)
 		self.session.params.update(self.init_params)
 
@@ -89,7 +87,7 @@ class SportsRadarService:
 		return response
 
 	def __del__(self):
-		print('%s deconstructed' % (self))
+		print('%s deconstructed. Calls to API: %s.' % (self, self.apiCalls))
 
 class SheetScribeService:
 	#Google sheets wriiiiiiiterrrrrr, Google Sheets wriiiiiiiterrrr
@@ -149,7 +147,7 @@ class SheetScribeService:
 		response        = self.sheetPtr.clear(spreadsheetId=self.spreadsheetId, range=requested_range, body=payload).execute()
 
 	def __del__(self):
-		print('%s deconstructed' % (self))
+		print('%s deconstructed. Calls to API: %s.' % (self, self.apiCalls))
 
 class Game:
 
@@ -328,7 +326,47 @@ class FakeGame:
 	def __del__(self):
 		print('%s deconstructed' % (self))
 
-@app.route("/")
+def render_from_fake_games():
+	
+	#@ToDo Move writing names and ranks into /football_post function
+	scribe = SheetScribeService('1r_kgK6WNvCIgNT3Mkz84MJXOfFPqAdrvv3g6m1bmdSI', 'https://www.googleapis.com/auth/spreadsheets', None)
+	
+	fake_games = []
+	away_ranks = []
+	away_teams = []
+	home_ranks = []
+	home_teams = []
+
+	for i in range(20):
+
+		game_instance= FakeGame()
+		
+		fake_games.append(game_instance)
+		away_ranks.append(game_instance.awayRank)
+		away_teams.append(game_instance.away_team)
+		home_ranks.append(game_instance.homeRank)
+		home_teams.append(game_instance.home_team)
+
+		#write_row_update_data = [[game_instance.awayRank, game_instance.away_team, '', '', game_instance.homeRank, game_instance.home_team, '']]
+		#scribe.write_row_range_values("Nik", 'B' + str(x), write_row_update_data)
+
+	away_ranks_payload = [away_ranks]
+	away_teams_payload = [away_teams]
+	home_ranks_payload = [home_ranks]
+	home_teams_payload = [home_teams]
+
+	scribe.write_column_range_values('Nik', 'B3', away_ranks_payload)
+	scribe.write_column_range_values('Nik', 'C3', away_teams_payload)
+	scribe.clear_column_values('Nik', 'D3:D1000')
+	scribe.clear_column_values('Nik', 'H3:E1000')
+	scribe.write_column_range_values('Nik', 'F3', home_ranks_payload)
+	scribe.write_column_range_values('Nik', 'G3', home_teams_payload)
+
+	return render_template('flask.html', seq=fake_games, response="none", phrase=random.choice(FUNNY_PHRASES))
+
+
+
+@FLASK_APP.route("/")
 def init():
 
 	for i in range(20):
@@ -336,13 +374,34 @@ def init():
 		game_instance= FakeGame()
 
 		if (game_instance.isImportant) or (game_instance.isRanked):
-
+			#@ToDo: season and week info go here or potentially set that up ourselves
 			return "<h1>running</h1>"
 
-@app.route("/")
-@app.route("/football-test/")
-def render_from_fake_games():
+@FLASK_APP.route("/")
+@FLASK_APP.route("/setup/")
+def setup_flask():
+	return render_template('setup.html')
+
+@FLASK_APP.route("/")
+@FLASK_APP.route("/setup_post", methods=['GET', 'POST'])
+def lask_post():
+
+	if request.method == "POST":
+		sheet_id   = request.form['SPREADSHEETID']
+		sheet_name = request.form['SHEETNAME']
+		season     = request.form['SEASON']
+		week       = request.form['WEEK']
+
+		return render_from_fake_games()
+
+
 	
+
+@FLASK_APP.route("/")
+@FLASK_APP.route("/football-test/")
+def test_from_fake_games():
+	
+	#@ToDo Move writing names and ranks into /football_post function
 	scribe = SheetScribeService('1r_kgK6WNvCIgNT3Mkz84MJXOfFPqAdrvv3g6m1bmdSI', 'https://www.googleapis.com/auth/spreadsheets', None)
 	
 	fake_games = []
@@ -379,12 +438,13 @@ def render_from_fake_games():
 
 	return render_template('flask.html', seq=fake_games, response="none", phrase=random.choice(FUNNY_PHRASES))
 
-@app.route("/")
-@app.route("/football_post", methods=['GET', 'POST'])
+@FLASK_APP.route("/")
+@FLASK_APP.route("/football_post", methods=['GET', 'POST'])
 def fake_games_post():
 
 		away_scores = []
 		home_scores = []
+
 		if request.method == "POST":
 			print("--------POST--------")
 			for i in range(0, 20):
