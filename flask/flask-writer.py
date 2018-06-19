@@ -1,4 +1,4 @@
-import requests, time, random, copy, httplib2
+import requests, time, random, copy, httplib2, os
 from flask import Flask, render_template, request
 from time import sleep
 from requests import get, Request, Session
@@ -9,7 +9,10 @@ from oauth2client.clientsecrets import InvalidClientSecretsError
 
 FLASK_APP           = Flask(__name__)
 
-SPORTSRADAR_API_KEY = open("sports-radar-api-key", "r").read()
+here = os.path.dirname(os.path.abspath(__file__))
+key_file = os.path.join(here, 'sports-radar-api-key')
+
+SPORTSRADAR_API_KEY = open(key_file, "r").read().rstrip("\n\r")
 
 FUNNY_PHRASES = ["Go Dawgs!", "Don't worry, we're all champions of life.", "All aboard the Gus Bus!", "D I L L Y D I L L Y.",
 "Shark Lovers Only.", "This program is approved by Joey Freshwater.", "Five Star Hearts ONLY.", "*Dooley takes note*", "7-3 Rutgers.",
@@ -39,7 +42,7 @@ class SportsRadarService:
 			print("Invalid API Key for SportsRadar Calls, or no json was returned")
 			self.apiCalls += 1
 			return False
-		
+
 		self.raw_request_data['game_data_json'] = response
 		sleep(1)
 		self.apiCalls += 1
@@ -47,28 +50,31 @@ class SportsRadarService:
 
 	def get_ranks(self, season, week):
 
-		poll = "AP25" if week < 10 else "CFP25"
-		
+		poll = "AP25" if int(week) < 10 else "CFP25"
+		print(week, poll)
 		try:
 			response = self.session.get("http://api.sportradar.us/ncaafb-t1/polls/" + str(poll) + "/" + str(season) + "/" + str(week) + "/rankings.json?").json()
 		except ValueError:
+			print(response)
 			print("Invalid API Key for SportsRadar Calls, or no json was returned")
 			self.apiCalls += 1
 			return False
 
 		self.raw_request_data['poll_data_json'] = response
-		
+
 		sleep(1)
 		self.apiCalls += 1
 
 		if not('rankings' in response.keys()):
-
+			print("NO RANKS")
+			print(response)
 			return False
 
 		else:
 
 			for team in response['rankings']:
 				self.ranks[team['id']] = team['rank']
+				print(team['id'], team['rank'])
 
 			return self.ranks
 
@@ -80,7 +86,7 @@ class SportsRadarService:
 			print("Invalid API Key for SportsRadar Calls, or no json was returned")
 			self.apiCalls += 1
 			return False
-		
+
 		self.raw_request_data['team_hierarchy_json'] = response
 		sleep(1)
 		self.apiCalls += 1
@@ -216,7 +222,7 @@ class Game:
 		self.home_points = game['home_points'] if 'home_points' in game.keys() else ''
 		self.away_points = game['away_points'] if 'away_points' in game.keys() else ''
 		self.isImportant = True if 'title' in game.keys() else False
-		self.isRanked    = True if (not(rankings)) or (self.home_acr in rankings.keys()) or (self.away_acr in rankings.keys()) else False
+		self.isRanked    = True if (rankings) and (self.home_acr in rankings.keys()) or (self.away_acr in rankings.keys()) else False
 
 		if self.isRanked and rankings:
 			self.awayRank = str(rankings[self.away_acr]) if (self.away_acr in rankings.keys()) else 'U'
@@ -330,7 +336,7 @@ def render_from_fake_games(sheet_id, sheet_name, season, week):
 
 	#@ToDo Move writing names and ranks into /football_post function
 	scribe = SheetScribeService(sheet_id, 'https://www.googleapis.com/auth/spreadsheets', None)
-	
+
 	fake_games = []
 	away_ranks = []
 	away_teams = []
@@ -340,7 +346,7 @@ def render_from_fake_games(sheet_id, sheet_name, season, week):
 	for i in range(20):
 
 		game_instance= FakeGame()
-		
+
 		fake_games.append(game_instance)
 		away_ranks.append(game_instance.awayRank)
 		away_teams.append(game_instance.away_team)
@@ -357,14 +363,12 @@ def render_from_fake_games(sheet_id, sheet_name, season, week):
 
 	scribe.write_column_range_values(sheet_name, 'B3', away_ranks_payload)
 	scribe.write_column_range_values(sheet_name, 'C3', away_teams_payload)
-	scribe.clear_column_values(sheet_name, 'D3:D1000')
-	scribe.clear_column_values(sheet_name, 'H3:E1000')
 	scribe.write_column_range_values(sheet_name, 'F3', home_ranks_payload)
 	scribe.write_column_range_values(sheet_name, 'G3', home_teams_payload)
 
-	return render_template('flask.html', 
-		seq=fake_games, 
-		response="none", 
+	return render_template('flask.html',
+		seq=fake_games,
+		response="none",
 		phrase=random.choice(FUNNY_PHRASES),
 		sheet_id_truncated=sheet_id[0:5] + "...",
 		sub_sheet=sheet_name,
@@ -379,7 +383,7 @@ def render_from_real_games(sheet_id, sheet_name, season, week):
 	radar_service = SportsRadarService(SPORTSRADAR_API_KEY)
 	games         = radar_service.get_games(season, week)
 	ranks         = radar_service.get_ranks(season, week)
-	
+
 	for column in ['A', 'B', 'C', 'D', 'E', 'F', 'G']:
 		scribe.clear_column_values(sheet_name, '%s3:%s1000' % (column, column))
 
@@ -389,12 +393,17 @@ def render_from_real_games(sheet_id, sheet_name, season, week):
 	home_ranks = []
 	home_teams = []
 
+	if not(games):
+		return "games is %s, radar_service module is auth'd with %s." % (str(games), SPORTSRADAR_API_KEY)
+
 	for game in games:
 
 		game_instance = Game(game, radar_service.ranks)
 
+		print(game_instance.isRanked, ranks)
+
 		if (game_instance.isRanked):
-		
+
 			real_games.append(game_instance)
 			away_ranks.append(game_instance.awayRank)
 			away_teams.append(game_instance.away_team)
@@ -411,9 +420,9 @@ def render_from_real_games(sheet_id, sheet_name, season, week):
 	scribe.write_column_range_values(sheet_name, 'F3', home_ranks_payload)
 	scribe.write_column_range_values(sheet_name, 'G3', home_teams_payload)
 
-	return render_template('flask.html', 
-		seq=real_games, 
-		response="none", 
+	return render_template('flask.html',
+		seq=real_games,
+		response="none",
 		phrase=random.choice(FUNNY_PHRASES),
 		sheet_id_truncated=sheet_id[0:7] + "...",
 		sub_sheet=sheet_name,
@@ -454,15 +463,15 @@ def flask_post():
 		return render_from_real_games(sheet_id, sheet_name, season, week)
 
 
-	
+
 
 @FLASK_APP.route("/")
 @FLASK_APP.route("/football-test/")
 def test_from_fake_games():
-	
+
 	#@ToDo Move writing names and ranks into /football_post function
 	scribe = SheetScribeService('1r_kgK6WNvCIgNT3Mkz84MJXOfFPqAdrvv3g6m1bmdSI', 'https://www.googleapis.com/auth/spreadsheets', None)
-	
+
 	fake_games = []
 	away_ranks = []
 	away_teams = []
@@ -472,7 +481,7 @@ def test_from_fake_games():
 	for i in range(20):
 
 		game_instance= FakeGame()
-		
+
 		fake_games.append(game_instance)
 		away_ranks.append(game_instance.awayRank)
 		away_teams.append(game_instance.away_team)
