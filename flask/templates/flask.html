@@ -12,40 +12,47 @@
 
 	<body>
 
-		<div class="container-fluid">
+		<div class="container-fluid" style="background-color: #E9E9E9">
 			<div class="row-fluid row-centered">
 				<h1><b>{{phrase}}<b></h1>
 			</div>
 			<form action="/football_post" method="POST">
-				{% for game in seq %}
-		    		<div class='row pd10' style="background-color: #E9E9E9; border-style: solid;">
-		    			<div class="col pd10">
-							{{game.gameStatus}}
-						</div>
-		    			<div class="col pd10">
-							{{game.awayRank}}
-						</div>
-						<div class="col pd10">
-							{{game.away_team}}
-						</div>
-						<div class="col pd10">
-							<input name="away_{{loop.index0}}" value={{game.away_points}}></input>
-						</div>
-						<div class="col pd10">
-							<input name="home_{{loop.index0}}" value={{game.home_points}}></input>
-						</div>
-						<div class="col pd10">
-							{{game.home_team}}
-						</div>
-						<div class="col pd10">
-							{{game.homeRank}}
-						</div>
-						<div class="col pd10">
-							{{game.gameTime}}
-						</div>
-					</div>
-				{% endfor %}
+
+				<table class="table table-responsive table-dark table-bordered table-striped" style="text-align: center;">
+
+					<thead>
+					    <tr>
+					    <th scope="col">#</th>
+					    <th scope="col">Status</th>
+					    <th scope="col">Away Rank</th>
+					    <th scope="col">Away Team</th>
+					    <th scope="col">Away Score Entry</th>
+					    <th scope="col">Home Score entry</th>
+					    <th scope="col">Home Team</th>
+					    <th scope="col">Home Rank</th>
+					    <th scope="col">Scheduled Time</th>
+					    </tr>
+					</thead>
+
+					<tbody>
+						{% for game in seq %}
+						<tr>
+							<th scope="row">{{loop.index}}</th>
+							<td>{{game.gameStatus}}</td>
+							<td>{{game.awayRank}}</td>
+							<td>{{game.away_team}}</td>
+							<td><input name="away_{{loop.index0}}" value={{game.away_points}}></input></td>
+							<td><input name="home_{{loop.index0}}" value={{game.home_points}}></input></td>
+							<td>{{game.home_team}}</td>
+							<td>{{game.homeRank}}</td>
+							<td>{{game.gameTime}}</td>
+						</tr>
+						{% endfor %}
+					</tbody>
+				</table>
+
 				<input type="submit">
+			
 			</form>
 			<h3>{{response}}</h3>
 		</div>

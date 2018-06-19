@@ -338,6 +338,7 @@ def football():
 
 	return render_template('flask.html', seq=sq, response="none", phrase=random.choice(FUNNY_PHRASES))
 
+@app.route("/")
 @app.route("/football_post", methods=['GET', 'POST'])
 def football_post():
 		away_scores = []
