@@ -372,6 +372,54 @@ def render_from_fake_games(sheet_id, sheet_name, season, week):
 		week=week
 		)
 
+def render_from_real_games(sheet_id, sheet_name, season, week):
+
+	#@ToDo Move writing names and ranks into /football_post function
+	scribe        = SheetScribeService(sheet_id, 'https://www.googleapis.com/auth/spreadsheets', None)
+	radar_service = SportsRadarService(SPORTSRADAR_API_KEY)
+	games         = radar_service.get_games(season, week)
+	ranks         = radar_service.get_ranks(season, week)
+	
+	for column in ['A', 'B', 'C', 'D', 'E', 'F', 'G']:
+		scribe.clear_column_values(sheet_name, '%s3:%s1000' % (column, column))
+
+	real_games = []
+	away_ranks = []
+	away_teams = []
+	home_ranks = []
+	home_teams = []
+
+	for game in games:
+
+		game_instance = Game(game, radar_service.ranks)
+
+		if (game_instance.isRanked):
+		
+			real_games.append(game_instance)
+			away_ranks.append(game_instance.awayRank)
+			away_teams.append(game_instance.away_team)
+			home_ranks.append(game_instance.homeRank)
+			home_teams.append(game_instance.home_team)
+
+	away_ranks_payload = [away_ranks]
+	away_teams_payload = [away_teams]
+	home_ranks_payload = [home_ranks]
+	home_teams_payload = [home_teams]
+
+	scribe.write_column_range_values(sheet_name, 'B3', away_ranks_payload)
+	scribe.write_column_range_values(sheet_name, 'C3', away_teams_payload)
+	scribe.write_column_range_values(sheet_name, 'F3', home_ranks_payload)
+	scribe.write_column_range_values(sheet_name, 'G3', home_teams_payload)
+
+	return render_template('flask.html', 
+		seq=real_games, 
+		response="none", 
+		phrase=random.choice(FUNNY_PHRASES),
+		sheet_id_truncated=sheet_id[0:7] + "...",
+		sub_sheet=sheet_name,
+		season=season,
+		week=week
+		)
 
 
 @FLASK_APP.route("/")
@@ -403,7 +451,7 @@ def flask_post():
 		print('ID: %s, Name: %s, Season: %s, Week: %s.' % (sheet_id, sheet_name, season, week))
 
 		#@ToDo: Pass these in to the function.
-		return render_from_fake_games(sheet_id, sheet_name, season, week)
+		return render_from_real_games(sheet_id, sheet_name, season, week)
 
 
 	
