@@ -1,19 +1,17 @@
 import requests, time, random, copy, httplib2
-import Tkinter as tk
-import tkMessageBox
 from flask import Flask, render_template, request
 from time import sleep
 from requests import get, Request, Session
-from Tkinter import *
 from apiclient.discovery import build, HttpError
 from httplib2 import Http
 from oauth2client import file, client, tools
 from oauth2client.clientsecrets import InvalidClientSecretsError
 
 app = Flask(__name__)
+
 app.run(debug=True)
 
-SportsRadar_API_Key = ''
+SportsRadar_API_Key = open("sports-radar-api-key", "r").read()
 
 FUNNY_PHRASES = ["Go Dawgs!", "Don't worry, we're all champions of life.", "All aboard the Gus Bus!", "D I L L Y D I L L Y.",
 "Shark Lovers Only.", "This program is approved by Joey Freshwater.", "Five Star Hearts ONLY.", "*Dooley takes note*", "7-3 Rutgers.",
@@ -36,28 +34,35 @@ class SportsRadarService:
 		self.session.params.update(self.init_params)
 
 	def get_games(self, season, week):
+
 		try:
 			response = self.session.get("http://api.sportradar.us/ncaafb-t1/" + str(season) + "/REG/" + str(week) + "/schedule.json?").json()
 		except ValueError:
-			tkMessageBox.showerror('err', 'Invalid API Key for SportsRadar Calls, or no json was returned')
+			print("Invalid API Key for SportsRadar Calls, or no json was returned")
 			self.apiCalls += 1
 			return False
+		
 		self.raw_request_data['game_data_json'] = response
 		sleep(1)
 		self.apiCalls += 1
 		return response['games'] if 'games' in response.keys() else response
 
 	def get_ranks(self, season, week):
-		poll     = "AP25" if week < 10 else "CFP25"
+
+		poll = "AP25" if week < 10 else "CFP25"
+		
 		try:
 			response = self.session.get("http://api.sportradar.us/ncaafb-t1/polls/" + str(poll) + "/" + str(season) + "/" + str(week) + "/rankings.json?").json()
 		except ValueError:
-			tkMessageBox.showerror('err', 'Invalid API Key for SportsRadar Calls, or no json was returned')
+			print("Invalid API Key for SportsRadar Calls, or no json was returned")
 			self.apiCalls += 1
 			return False
+
 		self.raw_request_data['poll_data_json'] = response
+		
 		sleep(1)
 		self.apiCalls += 1
+
 		if not('rankings' in response.keys()):
 
 			return False
@@ -70,12 +75,14 @@ class SportsRadarService:
 			return self.ranks
 
 	def get_team_hierarchy(self, division):
+
 		try:
 			response = self.session.get("http://api.sportradar.us/ncaafb-t1/teams/" + str(division) + "/hierarchy.json?").json()
 		except ValueError:
-			tkMessageBox.showerror('err', 'Invalid API Key for SportsRadar Calls, or no json was returned')
+			print("Invalid API Key for SportsRadar Calls, or no json was returned")
 			self.apiCalls += 1
 			return False
+		
 		self.raw_request_data['team_hierarchy_json'] = response
 		sleep(1)
 		self.apiCalls += 1
@@ -91,13 +98,15 @@ class SheetScribeService:
 		self.storage       = file.Storage('credentials.json')
 		self.creds         = self.storage.get()
 		self.scope         = scope
+		self.apiCalls      = 0
 
 		if not self.creds or self.creds.invalid:
 			try:
 				self.flow  = client.flow_from_clientsecrets('client_secret.json', self.scope)
 				self.creds = tools.run_flow(self.flow, self.storage)
+				self.auth  = True
 			except InvalidClientSecretsError:
-				tkMessageBox.showerror('err', 'Invalid OAuth2 and Client Secret credentials')
+				print("Invalid OAuth2 and Client Secret credentials")
 				self.auth = False
 				return
 
@@ -107,28 +116,37 @@ class SheetScribeService:
 
 	def get_sheet_values(self, sheet):
 		response        = self.sheetPtr.get(spreadsheetId=self.spreadsheetId,range=str(sheet)).execute()
-		sleep(0.25)
+		sleep(0.26)
+		self.apiCalls += 1
 		return response
 
 	def get_range_values(self, sheet, range):
 		requested_range = str(sheet) + '!' + str(range)
 		response        = self.sheetPtr.get(spreadsheetId=self.spreadsheetId,range=requested_range).execute()
-		sleep(0.25)
+		sleep(0.26)
+		self.apiCalls += 1
 		return response
 
 	def write_column_range_values(self, sheet, range, values):
 		print("Writing:", values, 'in range:', range, 'majorDimension=columns')
 		requested_range = str(sheet) + '!' + str(range)
 		response        = self.sheetPtr.update(spreadsheetId=self.spreadsheetId,range=requested_range,valueInputOption='USER_ENTERED',body={'values':values, 'majorDimension':'columns'}).execute()
-		sleep(0.25)
+		sleep(0.26)
+		self.apiCalls += 1
 		return response
 
 	def write_row_range_values(self, sheet, range, values):
 		print("Writing:", values, 'in range:', range, ', majorDimension=rows')
 		requested_range = str(sheet) + '!' + str(range)
 		response        = self.sheetPtr.update(spreadsheetId=self.spreadsheetId,range=requested_range,valueInputOption='USER_ENTERED',body={'values':values}).execute()
-		sleep(0.25)
+		sleep(0.26)
+		self.apiCalls += 1
 		return response
+
+	def clear_column_values(self, sheet, range):
+		payload = {}
+		requested_range = str(sheet) + '!' + str(range)
+		response        = self.sheetPtr.clear(spreadsheetId=self.spreadsheetId, range=requested_range, body=payload).execute()
 
 	def __del__(self):
 		print('%s deconstructed' % (self))
@@ -311,7 +329,7 @@ class FakeGame:
 		print('%s deconstructed' % (self))
 
 @app.route("/")
-def render_from_fake_games(name=None):
+def init():
 
 	for i in range(20):
 
@@ -322,25 +340,49 @@ def render_from_fake_games(name=None):
 			return "<h1>running</h1>"
 
 @app.route("/")
-@app.route("/football/")
-def football():
-	sq=[]
+@app.route("/football-test/")
+def render_from_fake_games():
+	
 	scribe = SheetScribeService('1r_kgK6WNvCIgNT3Mkz84MJXOfFPqAdrvv3g6m1bmdSI', 'https://www.googleapis.com/auth/spreadsheets', None)
-	x = 3
+	
+	fake_games = []
+	away_ranks = []
+	away_teams = []
+	home_ranks = []
+	home_teams = []
+
 	for i in range(20):
+
 		game_instance= FakeGame()
-		sq.append(game_instance)
+		
+		fake_games.append(game_instance)
+		away_ranks.append(game_instance.awayRank)
+		away_teams.append(game_instance.away_team)
+		home_ranks.append(game_instance.homeRank)
+		home_teams.append(game_instance.home_team)
 
-		write_row_update_data = [[game_instance.awayRank, game_instance.away_team, '', '', game_instance.homeRank, game_instance.home_team, '']]
-		scribe.write_row_range_values("Nik", 'B' + str(x), write_row_update_data)
-		x += 1
+		#write_row_update_data = [[game_instance.awayRank, game_instance.away_team, '', '', game_instance.homeRank, game_instance.home_team, '']]
+		#scribe.write_row_range_values("Nik", 'B' + str(x), write_row_update_data)
+
+	away_ranks_payload = [away_ranks]
+	away_teams_payload = [away_teams]
+	home_ranks_payload = [home_ranks]
+	home_teams_payload = [home_teams]
+
+	scribe.write_column_range_values('Nik', 'B3', away_ranks_payload)
+	scribe.write_column_range_values('Nik', 'C3', away_teams_payload)
+	scribe.clear_column_values('Nik', 'D3:D1000')
+	scribe.clear_column_values('Nik', 'H3:E1000')
+	scribe.write_column_range_values('Nik', 'F3', home_ranks_payload)
+	scribe.write_column_range_values('Nik', 'G3', home_teams_payload)
 
 
-	return render_template('flask.html', seq=sq, response="none", phrase=random.choice(FUNNY_PHRASES))
+	return render_template('flask.html', seq=fake_games, response="none", phrase=random.choice(FUNNY_PHRASES))
 
 @app.route("/")
 @app.route("/football_post", methods=['GET', 'POST'])
-def football_post():
+def fake_games_post():
+
 		away_scores = []
 		home_scores = []
 		if request.method == "POST":
