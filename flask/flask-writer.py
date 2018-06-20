@@ -1,5 +1,5 @@
 import requests, time, random, copy, httplib2, os
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, session
 from time import sleep
 from requests import get, Request, Session
 from apiclient.discovery import build, HttpError
@@ -10,7 +10,8 @@ from oauth2client.clientsecrets import InvalidClientSecretsError
 directory            = os.path.dirname(os.path.abspath(__file__))
 sportsradar_key_file = os.path.join(directory, 'sports-radar-api-key')
 
-FLASK_APP           = Flask(__name__)
+FLASK_APP            = Flask(__name__)
+FLASK_APP.secret_key = 'hunter2'
 
 SPORTSRADAR_API_KEY = open(sportsradar_key_file, "r").read().rstrip("\n\r")
 
@@ -413,6 +414,9 @@ def render_from_real_games(sheet_id, sheet_name, season, week):
 	scribe.write_column_range_values(sheet_name, 'F3', home_ranks_payload)
 	scribe.write_column_range_values(sheet_name, 'G3', home_teams_payload)
 
+	session['google_sheets_api_calls'] += scribe.apiCalls
+	session['sportsradar_api_calls']   += radar_service.apiCalls
+
 	return render_template('flask.html',
 		seq=real_games,
 		phrase=random.choice(FUNNY_PHRASES),
@@ -444,6 +448,11 @@ def flask_post():
 		season     = request.form['SEASON']
 		week       = request.form['WEEK']
 
+		session["sheet_id"]   = sheet_id
+		session["sheet_name"] = sheet_name
+		session['google_sheets_api_calls'] = 0
+		session['sportsradar_api_calls']   = 0
+
 		print('Posted - ID: %s, Name: %s, Season: %s, Week: %s.' % (sheet_id, sheet_name, season, week))
 
 		#if request.form["FAKEGAMES"]:
@@ -472,13 +481,15 @@ def football_post():
 
 			away_score_payload = [away_scores]
 			home_score_payload = [home_scores]
-			scribe = SheetScribeService('1r_kgK6WNvCIgNT3Mkz84MJXOfFPqAdrvv3g6m1bmdSI', 'https://www.googleapis.com/auth/spreadsheets', None)
-			scribe.write_column_range_values("Nik", 'D3', away_score_payload)
-			scribe.write_column_range_values("Nik", 'H3', home_score_payload)
-			#for key in request.form.keys():
-			#	print(key)
-			#	for value in request.form.getlist(key):
-			#		print(key, ":", value)
-			return "response POSTED"
+			scribe = SheetScribeService(session['sheet_id'], 'https://www.googleapis.com/auth/spreadsheets', None)
+			scribe.write_column_range_values(session['sheet_name'], 'D3', away_score_payload)
+			scribe.write_column_range_values(session['sheet_name'], 'H3', home_score_payload)
+
+			session['google_sheets_api_calls'] += scribe.apiCalls
+
+			return render_template('post.html',
+				sportsradar_api_calls=session['sportsradar_api_calls'],
+				google_sheets_api_calls=session['google_sheets_api_calls']
+				)
 		else:
-			return "response NOT POSTED"
+			return "response ERR"
