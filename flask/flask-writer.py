@@ -13,6 +13,9 @@ sportsradar_key_file = os.path.join(directory, 'sports-radar-api-key')
 FLASK_APP            = Flask(__name__)
 FLASK_APP.secret_key = 'hunter2'
 
+if __name__ == "__main__":
+	FLASK_APP.run(debug=True)
+
 SPORTSRADAR_API_KEY = open(sportsradar_key_file, "r").read().rstrip("\n\r")
 
 FUNNY_PHRASES = ["Go Dawgs!", "Don't worry, we're all champions of life.", "All aboard the Gus Bus!", "D I L L Y D I L L Y.",
