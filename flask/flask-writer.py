@@ -377,14 +377,23 @@ def render_from_fake_games(sheet_id, sheet_name, season, week):
 def render_from_real_games(sheet_id, sheet_name, season, week):
 
 	#@ToDo Move writing names and ranks into /football_post function
-	scribe        = SheetScribeService(sheet_id, 'https://www.googleapis.com/auth/spreadsheets', None)
-	sub_sheet     = sheet_name
+	scribe    = SheetScribeService(sheet_id, 'https://www.googleapis.com/auth/spreadsheets', None)
+	sub_sheet = sheet_name
+	
+	#We need to wreck our sheet's A-H
+	#columns to make way for new info
+	for column in ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']:
+		#Check for fidelity
+		try:
+			scribe.clear_column_values(sheet_name, '%s3:%s1000' % (column, column))
+		except HttpError:
+			#@ToDo: Proper error_sheet.html
+			return "<h1>Request spreadsheet entity %s or sub_sheet %s not found.</h1>" % (sheet_id, sheet_name)
+	
+	#Assuming scribe service didn't bail, let's grab the games
 	radar_service = SportsRadarService(SPORTSRADAR_API_KEY)
 	games         = radar_service.get_games(season, week)
 	ranks         = radar_service.get_ranks(season, week)
-
-	for column in ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']:
-		scribe.clear_column_values(sheet_name, '%s3:%s1000' % (column, column))
 
 	real_games = []
 	away_ranks = []
@@ -393,13 +402,16 @@ def render_from_real_games(sheet_id, sheet_name, season, week):
 	home_teams = []
 
 	if not(games):
-		return "games is %s, radar_service module is auth'd with %s." % (str(games), SPORTSRADAR_API_KEY)
+		#@ToDo: Proper error_sheet.html
+		return "Radar Service Module returned with: %s. Go back to setup." % (str(games))
 
 	for game in games:
 
 		game_instance = Game(game, radar_service.ranks)
 
-		if (game_instance.isRanked):
+		#ToDo: If game_instance.isImportant it must be a bowl game
+		#we need to pass the title into our flask.html to signify this
+		if (game_instance.isRanked) or (game_instance.isImportant):
 
 			real_games.append(game_instance)
 			away_ranks.append(game_instance.awayRank)
