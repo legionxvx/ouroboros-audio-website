@@ -5,8 +5,8 @@
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1">
-		<link rel="stylesheet" type="text/css" href=../static/bootstrap.css />
-		<link rel="stylesheet" type="text/css" href=../static/page.css />
+		<link rel="stylesheet" type="text/css" href={{ url_for('static', filename='bootstrap.css') }} />
+		<link rel="stylesheet" type="text/css" href={{ url_for('static', filename='page.css') }} />
 		<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.13/css/all.css" integrity="sha384-DNOHZ68U8hZfKXOrtjWvjxusGo9WQnrNx2sqG0tfsghAvtVlRW3tvkXWZh58N9jp" crossorigin="anonymous">
 		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
 	</head>
@@ -16,8 +16,8 @@
 		<div class="container-fluid" style="background-color: #E9E9E9">
 			<div class="row-fluid row-centered">
 				<h1>Response <b>OK</b>.</h1>
-				<p>Sports Radar Service Module API Call Counter: <b>2</b>.</p>
-				<p>Google Sheets Service Module API Call Counter: <b>4</b>.</p>
+				<p>Sports Radar Service Module API Call Counter: <b>{{sportsradar_api_calls}}</b>.</p>
+				<p>Google Sheets Service Module API Call Counter: <b>{{google_sheets_api_calls}}</b>.</p>
 			</div>
 		</div>
 

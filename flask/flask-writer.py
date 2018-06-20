@@ -7,12 +7,12 @@ from httplib2 import Http
 from oauth2client import file, client, tools
 from oauth2client.clientsecrets import InvalidClientSecretsError
 
+directory            = os.path.dirname(os.path.abspath(__file__))
+sportsradar_key_file = os.path.join(directory, 'sports-radar-api-key')
+
 FLASK_APP           = Flask(__name__)
 
-here = os.path.dirname(os.path.abspath(__file__))
-key_file = os.path.join(here, 'sports-radar-api-key')
-
-SPORTSRADAR_API_KEY = open(key_file, "r").read().rstrip("\n\r")
+SPORTSRADAR_API_KEY = open(sportsradar_key_file, "r").read().rstrip("\n\r")
 
 FUNNY_PHRASES = ["Go Dawgs!", "Don't worry, we're all champions of life.", "All aboard the Gus Bus!", "D I L L Y D I L L Y.",
 "Shark Lovers Only.", "This program is approved by Joey Freshwater.", "Five Star Hearts ONLY.", "*Dooley takes note*", "7-3 Rutgers.",
@@ -49,13 +49,11 @@ class SportsRadarService:
 		return response['games'] if 'games' in response.keys() else response
 
 	def get_ranks(self, season, week):
-
 		poll = "AP25" if int(week) < 10 else "CFP25"
-		print(week, poll)
+
 		try:
 			response = self.session.get("http://api.sportradar.us/ncaafb-t1/polls/" + str(poll) + "/" + str(season) + "/" + str(week) + "/rankings.json?").json()
 		except ValueError:
-			print(response)
 			print("Invalid API Key for SportsRadar Calls, or no json was returned")
 			self.apiCalls += 1
 			return False
@@ -66,16 +64,10 @@ class SportsRadarService:
 		self.apiCalls += 1
 
 		if not('rankings' in response.keys()):
-			print("NO RANKS")
-			print(response)
 			return False
-
 		else:
-
 			for team in response['rankings']:
 				self.ranks[team['id']] = team['rank']
-				print(team['id'], team['rank'])
-
 			return self.ranks
 
 	def get_team_hierarchy(self, division):
@@ -210,7 +202,6 @@ class Game:
 
 	#for organizing game data
 	def __init__(self, game, rankings):
-		print(game)
 		self.home_acr    = game['home']
 		self.away_acr    = game['away']
 		self.home_team   = self.lookup_full_name(game['home'])
@@ -228,9 +219,8 @@ class Game:
 			self.awayRank = str(rankings[self.away_acr]) if (self.away_acr in rankings.keys()) else 'U'
 			self.homeRank = str(rankings[self.home_acr]) if (self.home_acr in rankings.keys()) else 'U'
 
-	#@ToDo: Implement this
+	#@ToDo: Implement this fully
 	def format_time(self, unformatted):
-		print(unformatted)
 		formatted = unformatted[0:16]
 		return formatted
 
@@ -332,10 +322,14 @@ class FakeGame:
 	def __del__(self):
 		print('%s deconstructed' % (self))
 
+scribe    = None
+sub_sheet = None
+
 def render_from_fake_games(sheet_id, sheet_name, season, week):
 
 	#@ToDo Move writing names and ranks into /football_post function
-	scribe = SheetScribeService(sheet_id, 'https://www.googleapis.com/auth/spreadsheets', None)
+	scribe    = SheetScribeService(sheet_id, 'https://www.googleapis.com/auth/spreadsheets', None)
+	sub_sheet = sheet_name
 
 	fake_games = []
 	away_ranks = []
@@ -345,7 +339,7 @@ def render_from_fake_games(sheet_id, sheet_name, season, week):
 
 	for i in range(20):
 
-		game_instance= FakeGame()
+		game_instance = FakeGame()
 
 		fake_games.append(game_instance)
 		away_ranks.append(game_instance.awayRank)
@@ -361,10 +355,10 @@ def render_from_fake_games(sheet_id, sheet_name, season, week):
 	home_ranks_payload = [home_ranks]
 	home_teams_payload = [home_teams]
 
-	scribe.write_column_range_values(sheet_name, 'B3', away_ranks_payload)
-	scribe.write_column_range_values(sheet_name, 'C3', away_teams_payload)
-	scribe.write_column_range_values(sheet_name, 'F3', home_ranks_payload)
-	scribe.write_column_range_values(sheet_name, 'G3', home_teams_payload)
+	#scribe.write_column_range_values(sheet_name, 'B3', away_ranks_payload)
+	#scribe.write_column_range_values(sheet_name, 'C3', away_teams_payload)
+	#scribe.write_column_range_values(sheet_name, 'F3', home_ranks_payload)
+	#scribe.write_column_range_values(sheet_name, 'G3', home_teams_payload)
 
 	return render_template('flask.html',
 		seq=fake_games,
@@ -380,11 +374,12 @@ def render_from_real_games(sheet_id, sheet_name, season, week):
 
 	#@ToDo Move writing names and ranks into /football_post function
 	scribe        = SheetScribeService(sheet_id, 'https://www.googleapis.com/auth/spreadsheets', None)
+	sub_sheet     = sheet_name
 	radar_service = SportsRadarService(SPORTSRADAR_API_KEY)
 	games         = radar_service.get_games(season, week)
 	ranks         = radar_service.get_ranks(season, week)
 
-	for column in ['A', 'B', 'C', 'D', 'E', 'F', 'G']:
+	for column in ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']:
 		scribe.clear_column_values(sheet_name, '%s3:%s1000' % (column, column))
 
 	real_games = []
@@ -399,8 +394,6 @@ def render_from_real_games(sheet_id, sheet_name, season, week):
 	for game in games:
 
 		game_instance = Game(game, radar_service.ranks)
-
-		print(game_instance.isRanked, ranks)
 
 		if (game_instance.isRanked):
 
@@ -422,7 +415,6 @@ def render_from_real_games(sheet_id, sheet_name, season, week):
 
 	return render_template('flask.html',
 		seq=real_games,
-		response="none",
 		phrase=random.choice(FUNNY_PHRASES),
 		sheet_id_truncated=sheet_id[0:7] + "...",
 		sub_sheet=sheet_name,
@@ -433,14 +425,8 @@ def render_from_real_games(sheet_id, sheet_name, season, week):
 
 @FLASK_APP.route("/")
 def init():
-
-	for i in range(20):
-
-		game_instance= FakeGame()
-
-		if (game_instance.isImportant) or (game_instance.isRanked):
-			#@ToDo: season and week info go here or potentially set that up ourselves
-			return "<h1>running</h1>"
+	#@ToDo: Put something better here
+	return "<h1>running</h1>"
 
 @FLASK_APP.route("/")
 @FLASK_APP.route("/setup/")
@@ -452,75 +438,38 @@ def setup_flask():
 def flask_post():
 
 	if request.method == "POST":
+
 		sheet_id   = request.form['SPREADSHEETID']
 		sheet_name = request.form['SHEETNAME']
 		season     = request.form['SEASON']
 		week       = request.form['WEEK']
 
-		print('ID: %s, Name: %s, Season: %s, Week: %s.' % (sheet_id, sheet_name, season, week))
+		print('Posted - ID: %s, Name: %s, Season: %s, Week: %s.' % (sheet_id, sheet_name, season, week))
 
-		#@ToDo: Pass these in to the function.
+		#if request.form["FAKEGAMES"]:
+		#	return render_from_fake_games(sheet_id, sheet_name, season, week)
+		#else:
 		return render_from_real_games(sheet_id, sheet_name, season, week)
-
-
-
-
-@FLASK_APP.route("/")
-@FLASK_APP.route("/football-test/")
-def test_from_fake_games():
-
-	#@ToDo Move writing names and ranks into /football_post function
-	scribe = SheetScribeService('1r_kgK6WNvCIgNT3Mkz84MJXOfFPqAdrvv3g6m1bmdSI', 'https://www.googleapis.com/auth/spreadsheets', None)
-
-	fake_games = []
-	away_ranks = []
-	away_teams = []
-	home_ranks = []
-	home_teams = []
-
-	for i in range(20):
-
-		game_instance= FakeGame()
-
-		fake_games.append(game_instance)
-		away_ranks.append(game_instance.awayRank)
-		away_teams.append(game_instance.away_team)
-		home_ranks.append(game_instance.homeRank)
-		home_teams.append(game_instance.home_team)
-
-		#write_row_update_data = [[game_instance.awayRank, game_instance.away_team, '', '', game_instance.homeRank, game_instance.home_team, '']]
-		#scribe.write_row_range_values("Nik", 'B' + str(x), write_row_update_data)
-
-	away_ranks_payload = [away_ranks]
-	away_teams_payload = [away_teams]
-	home_ranks_payload = [home_ranks]
-	home_teams_payload = [home_teams]
-
-	scribe.write_column_range_values('Nik', 'B3', away_ranks_payload)
-	scribe.write_column_range_values('Nik', 'C3', away_teams_payload)
-	scribe.clear_column_values('Nik', 'D3:D1000')
-	scribe.clear_column_values('Nik', 'H3:E1000')
-	scribe.write_column_range_values('Nik', 'F3', home_ranks_payload)
-	scribe.write_column_range_values('Nik', 'G3', home_teams_payload)
-
-
-	return render_template('flask.html', seq=fake_games, response="none", phrase=random.choice(FUNNY_PHRASES))
 
 @FLASK_APP.route("/")
 @FLASK_APP.route("/football_post", methods=['GET', 'POST'])
-def fake_games_post():
+def football_post():
 
 		away_scores = []
 		home_scores = []
 
 		if request.method == "POST":
-			print("--------POST--------")
-			for i in range(0, 20):
-				home = request.form['home_'+str(i)]
-				away = request.form['away_'+str(i)]
+
+			for i in range(0, (len(request.form)/2)):
+
+				home = request.form['home_' + str(i)]
+				away = request.form['away_' + str(i)]
+
 				away_scores.append(away)
 				home_scores.append(home)
+
 				print( "AWAY", away, "HOME: ", home)
+
 			away_score_payload = [away_scores]
 			home_score_payload = [home_scores]
 			scribe = SheetScribeService('1r_kgK6WNvCIgNT3Mkz84MJXOfFPqAdrvv3g6m1bmdSI', 'https://www.googleapis.com/auth/spreadsheets', None)
