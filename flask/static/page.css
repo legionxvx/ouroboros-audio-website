@@ -82,6 +82,10 @@ ul {
 	display: inline-block;
 }
 
+.smaller-input {
+	/*width: 40px;*/
+}
+
 .game-info {
 	padding-top: 30px;
 	padding-bottom: 30px;
@@ -90,15 +94,7 @@ ul {
 	text-align: center;
 }
 
-@media only screen and (max-width: 1024px) {
-		.game-info {
-			padding-top: 30px;
-			padding-bottom: 30px;
-			padding-left: 0px;
-			padding-right: 0px;
-			text-align: justify;
-		}
-	}
+
 
 .border-top-and-right {
 	border-right: 0.25px solid;
@@ -110,6 +106,38 @@ ul {
 	border-top: 0.25px solid;
 }
 
+@media only screen and (max-width: 1300px) {
+		.game-info {
+			padding-top: 30px;
+			padding-bottom: 30px;
+			padding-left: 100px;
+			padding-right: 0px;
+			text-align: left;
+		}
+		.smaller-input {
+			width: 150px;
+		}
+	}
+
+	@media only screen and (max-width: 980px) {
+		.game-info {
+			padding-top: 30px;
+			padding-bottom: 30px;
+			padding-left: 0px;
+			padding-right: 0px;
+			text-align: right;
+		}
+		.smaller-input {
+			width: 150px;
+		}
+
+		.border-top-and-left {
+			border-left: 0.5px solid;
+			border-top: 0.25px solid;
+			border-bottom: 0.5px solid;
+		}
+		
+	}
 
 
 .pd100-L {
