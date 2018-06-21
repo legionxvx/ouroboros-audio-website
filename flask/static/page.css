@@ -56,7 +56,6 @@ header {
 
 li {
 	display: inline-block;
-	padding: 1em 0.5em 0 0;
 }
 
 label {
@@ -79,19 +78,27 @@ h1 .spaced {
 }
 
 
-ol, ul {
-	list-style: none;
-	text-align: center;
-	padding: 0 1em 0 0;
+ul {
+	display: inline-block;
 }
 
 .game-info {
 	padding-top: 30px;
 	padding-bottom: 30px;
-	padding-left: 100px;
-	padding-right: 100px;
+	padding-left: 300px;
+	padding-right: 0px;
 	text-align: center;
 }
+
+@media only screen and (max-width: 1024px) {
+		.game-info {
+			padding-top: 30px;
+			padding-bottom: 30px;
+			padding-left: 0px;
+			padding-right: 0px;
+			text-align: justify;
+		}
+	}
 
 .border-top-and-right {
 	border-right: 0.25px solid;
