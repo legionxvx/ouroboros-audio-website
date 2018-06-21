@@ -1,11 +1,13 @@
 @charset "UTF-8";
-@import url("http://fonts.googleapis.com/css?family=Source+Sans+Pro:200");
+@import url("https://fonts.googleapis.com/css?family=Raleway:300");
+
 
 /* padding: top right bottom left*/
-
 body {
-	background-color: #fff;
-	/*background-image: url("../images/bg.jpg");*/
+	font-family: Raleway;
+	letter-spacing: 2px;
+	background-color: #F8F8F8;
+	/*background-image: url("images/bg.png");*/
 	background-size: full;
 	background-position: top center;
 	-ms-overflow-style: scrollbar;
@@ -70,9 +72,6 @@ h3 {
 	text-decoration: none;
 }
 
-h1 {
-	text-align: center;
-}
 
 h1 .spaced {
 	color: rgba(255, 255, 255, 0.85);
@@ -84,6 +83,43 @@ ol, ul {
 	list-style: none;
 	text-align: center;
 	padding: 0 1em 0 0;
+}
+
+.game-info {
+	padding-top: 30px;
+	padding-bottom: 30px;
+	padding-left: 100px;
+	padding-right: 100px;
+	text-align: center;
+}
+
+.border-top-and-right {
+	border-right: 0.25px solid;
+	border-top: 0.5px solid;
+}
+
+.border-top-and-left {
+	border-left: 0.5px solid;
+	border-top: 0.25px solid;
+}
+
+
+
+.pd100-L {
+	padding-left: 80px;
+}
+.sub-sheet {
+	opacity: 0.75;
+	text-align: right;
+}
+
+.motd {
+	font-weight: bold;
+	text-align: left;
+}
+
+.season-week-info {
+	text-align: left;
 }
 
 .projects-header {
