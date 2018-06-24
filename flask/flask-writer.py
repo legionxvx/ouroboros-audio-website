@@ -9,6 +9,11 @@ from oauth2client.clientsecrets import InvalidClientSecretsError
 
 directory            = os.path.dirname(os.path.abspath(__file__))
 sportsradar_key_file = os.path.join(directory, 'sports-radar-api-key')
+remote               = False
+
+if "LOCATION" in os.environ:
+	if os.environ['LOCATION'] == "remote":
+		remote = True
 
 FLASK_APP            = Flask(__name__)
 FLASK_APP.secret_key = 'hunter2'
@@ -99,6 +104,7 @@ class SheetScribeService:
 		self.creds         = self.storage.get()
 		self.scope         = scope
 		self.apiCalls      = 0
+		self.auth        = False
 
 		if not self.creds or self.creds.invalid:
 			try:
@@ -113,6 +119,7 @@ class SheetScribeService:
 
 		self.GoogleSheetsService = build('sheets', 'v4', http=self.creds.authorize(Http()))
 		self.sheetPtr            = self.GoogleSheetsService.spreadsheets().values()
+		self.auth              = True
 
 	def get_sheet_values(self, sheet):
 		response        = self.sheetPtr.get(spreadsheetId=self.spreadsheetId,range=str(sheet)).execute()
@@ -335,40 +342,70 @@ def render_from_fake_games(sheet_id, sheet_name, season, week):
 	scribe    = SheetScribeService(sheet_id, 'https://www.googleapis.com/auth/spreadsheets', None)
 	sub_sheet = sheet_name
 
+	#We need to wreck our sheet's A-H
+	#columns to make way for new info
+	for column in ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']:
+		#Check for fidelity
+		try:
+			scribe.clear_column_values(sheet_name, '%s3:%s1000' % (column, column))
+		except HttpError:
+			#@ToDo: Proper error_sheet.html
+			return "<h1>Request spreadsheet entity %s or sub_sheet %s not found.</h1>" % (sheet_id, sub_sheet)
+
+	#Assuming scribe service didn't bail, let's grab the games
+	#radar_service = SportsRadarService(SPORTSRADAR_API_KEY)
+	#games         = radar_service.get_games(season, week)
+	#ranks         = radar_service.get_ranks(season, week)
+
 	fake_games = []
 	away_ranks = []
 	away_teams = []
 	home_ranks = []
 	home_teams = []
 
-	for i in range(20):
+	if not(scribe.auth):
+		#@ToDo: Proper error_sheet.html
+		return "Sheets Writer Service Module returned with: %s. Go back to setup." % (str(scribe.auth))
+
+	for i in range(26):
 
 		game_instance = FakeGame()
 
-		fake_games.append(game_instance)
-		away_ranks.append(game_instance.awayRank)
-		away_teams.append(game_instance.away_team)
-		home_ranks.append(game_instance.homeRank)
-		home_teams.append(game_instance.home_team)
+		#ToDo: If game_instance.isImportant it must be a bowl game
+		#we need to pass the title into our flask.html to signify this
+		if (game_instance.isRanked) or (game_instance.isImportant):
+			#passing the whole real_games list into
+			#flask.html means that we need to parse it there
+			#and not here, saving us a bunch of time
+			fake_games.append(game_instance)
 
-		#write_row_update_data = [[game_instance.awayRank, game_instance.away_team, '', '', game_instance.homeRank, game_instance.home_team, '']]
-		#scribe.write_row_range_values("Nik", 'B' + str(x), write_row_update_data)
+			away_ranks.append(game_instance.awayRank)
+			away_teams.append(game_instance.away_team)
+			home_ranks.append(game_instance.homeRank)
+			home_teams.append(game_instance.home_team)
 
+	#wrap our payloads for google sheets
 	away_ranks_payload = [away_ranks]
 	away_teams_payload = [away_teams]
 	home_ranks_payload = [home_ranks]
 	home_teams_payload = [home_teams]
 
-	#scribe.write_column_range_values(sheet_name, 'B3', away_ranks_payload)
-	#scribe.write_column_range_values(sheet_name, 'C3', away_teams_payload)
-	#scribe.write_column_range_values(sheet_name, 'F3', home_ranks_payload)
-	#scribe.write_column_range_values(sheet_name, 'G3', home_teams_payload)
+	#since we made it this far, we probably
+	#don't need a fidelity check
+	scribe.write_column_range_values(sub_sheet, 'B3', away_ranks_payload)
+	scribe.write_column_range_values(sub_sheet, 'C3', away_teams_payload)
+	scribe.write_column_range_values(sub_sheet, 'F3', home_ranks_payload)
+	scribe.write_column_range_values(sub_sheet, 'G3', home_teams_payload)
+
+	#increment our counters for fun stats in post.html
+	session['google_sheets_api_calls'] += scribe.apiCalls
+	#session['sportsradar_api_calls']   += radar_service.apiCalls
 
 	return render_template('flask.html',
 		seq=fake_games,
-		response="none",
+		environment=remote,
 		phrase=random.choice(FUNNY_PHRASES),
-		sheet_id_truncated=sheet_id[0:5] + "...",
+		sheet_id_truncated=sheet_id[0:7] + "...",
 		sub_sheet=sheet_name,
 		season=season,
 		week=week
@@ -416,7 +453,7 @@ def render_from_real_games(sheet_id, sheet_name, season, week):
 			#flask.html means that we need to parse it there
 			#and not here, saving us a bunch of time
 			real_games.append(game_instance)
-			
+
 			away_ranks.append(game_instance.awayRank)
 			away_teams.append(game_instance.away_team)
 			home_ranks.append(game_instance.homeRank)
@@ -479,12 +516,12 @@ def flask_post():
 
 		#print('Posted - ID: %s, Name: %s, Season: %s, Week: %s.' % (sheet_id, sheet_name, season, week))
 
-		#if request.form["FAKEGAMES"]:
-		#	return render_from_fake_games(sheet_id, sheet_name, season, week)
-		#else:
+		if request.form["FAKEGAMES"]:
+			return render_from_fake_games(sheet_id, sheet_name, season, week)
+		else:
 
 		#render_from_real_games() will return a render_template(flask.html)
-		return render_from_real_games(sheet_id, sheet_name, season, week)
+			return render_from_real_games(sheet_id, sheet_name, season, week)
 
 @FLASK_APP.route("/")
 @FLASK_APP.route("/football_post", methods=['GET', 'POST'])
