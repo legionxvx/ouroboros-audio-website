@@ -132,6 +132,13 @@ class SheetScribeService:
 		response        = self.sheetPtr.get(spreadsheetId=self.spreadsheetId,range=requested_range).execute()
 		sleep(0.26)
 		self.apiCalls += 1
+		return response.get('values') if response.get('values') is not None else 0
+
+	def get_column_range_values(self, sheet, range):
+		requested_range = str(sheet) + '!' + str(range)
+		response        = self.sheetPtr.get(spreadsheetId=self.spreadsheetId,range=requested_range, body={'majorDimension':'columns'}).execute()
+		sleep(0.26)
+		self.apiCalls += 1
 		return response
 
 	def write_column_range_values(self, sheet, range, values):
@@ -344,13 +351,20 @@ def render_from_fake_games(sheet_id, sheet_name, season, week):
 
 	#We need to wreck our sheet's A-H
 	#columns to make way for new info
-	for column in ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']:
+	for column in ['A', 'B', 'C', 'E', 'F', 'G']:
 		#Check for fidelity
 		try:
 			scribe.clear_column_values(sheet_name, '%s3:%s1000' % (column, column))
 		except HttpError:
 			#@ToDo: Proper error_sheet.html
 			return "<h1>Request spreadsheet entity %s or sub_sheet %s not found.</h1>" % (sheet_id, sub_sheet)
+
+	already_there = None
+	try:
+		already_there = scribe.get_range_values(sub_sheet, "D3:28")
+	except HttpError:
+		return "<h1>Request spreadsheet entity %s or sub_sheet vals %s not found.</h1>" % (sheet_id, already_there)
+	print("VALS", already_there)
 
 	#Assuming scribe service didn't bail, let's grab the games
 	#radar_service = SportsRadarService(SPORTSRADAR_API_KEY)
