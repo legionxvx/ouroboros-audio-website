@@ -425,7 +425,7 @@ def render_from_fake_games(sheet_id, sheet_name, season, week):
 
 	return render_template('flask.html',
 		seq=fake_games,
-		environment=remote,
+		remote=remote,
 		phrase=random.choice(FUNNY_PHRASES),
 		sheet_id_truncated=sheet_id[0:7] + "...",
 		sub_sheet=sheet_name,
@@ -516,7 +516,7 @@ def init():
 @FLASK_APP.route("/")
 @FLASK_APP.route("/setup/")
 def setup_flask():
-	return render_template('setup.html')
+	return render_template('setup.html', remote=remote)
 
 @FLASK_APP.route("/")
 @FLASK_APP.route("/ncaa-football/", methods=['GET', 'POST'])
