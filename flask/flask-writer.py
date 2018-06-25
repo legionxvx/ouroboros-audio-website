@@ -361,10 +361,14 @@ def render_from_fake_games(sheet_id, sheet_name, season, week):
 
 	already_there = None
 	try:
-		already_there = scribe.get_range_values(sub_sheet, "D3:28")
+		already_there = scribe.get_range_values(sub_sheet, "D3:D28")
 	except HttpError:
 		return "<h1>Request spreadsheet entity %s or sub_sheet vals %s not found.</h1>" % (sheet_id, already_there)
 	print("VALS", already_there)
+
+
+	for x in range(len(already_there)):
+		print("Val %s" % (already_there[x]))
 
 	#Assuming scribe service didn't bail, let's grab the games
 	#radar_service = SportsRadarService(SPORTSRADAR_API_KEY)
@@ -379,11 +383,15 @@ def render_from_fake_games(sheet_id, sheet_name, season, week):
 
 	if not(scribe.auth):
 		#@ToDo: Proper error_sheet.html
-		return "Sheets Writer Service Module returned with: %s. Go back to setup." % (str(scribe.auth))
+		return "Sheets Writer Service Module returned with: %s. Go back to setup." % (scribe.auth)
 
 	for i in range(26):
 
 		game_instance = FakeGame()
+
+		#there were vals in the sheet already, sub them in
+		if already_there != 0 and already_there[i] != "":
+			game_instance.away_points = int(already_there[i][0])
 
 		#ToDo: If game_instance.isImportant it must be a bowl game
 		#we need to pass the title into our flask.html to signify this
