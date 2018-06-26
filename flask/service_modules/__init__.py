@@ -11,50 +11,57 @@ from apiclient.discovery import build, HttpError
 from oauth2client.clientsecrets import InvalidClientSecretsError
 
 class FakeGame:
-	#for testing
-	FBS_TEAMS = {'AF':'Air Force', 'AKRN':'Akron',
-	'BAMA':'Alabama', 'UAB':'Alabama-Birmingham', 'ARIZ':'Arizona',
-	'ARST':'Arkansas St.', 'ARMY':'Army', 'AUB':'Auburn',
-	'BALL':'Ball St.', 'BAY':'Baylor', 'BOISE':'Boise St.',
-	'BC':'Boston College', 'BG':'Bowling Green', 'BYU':'Brigham Young',
-	'BUF':'Buffalo', 'CAL':'California', 'UCF':'Central Florida',
-	'CMU':'Central Michigan', 'CIN':'Cincinnati', 'CLEM':'Clemson',
-	'COL':'Colorado', 'CSU':'Colorado St.', 'CONN':'Connecticut',
-	'DUKE':'Duke', 'ECU':'East Carolina', 'EMU':'Eastern Michigan',
-	'UF':'	Florida', 'FAU':'Florida Atlantic', 'FIU':'Florida International',
-	'FSU':'Florida St.', 'FRSNO':'Fresno St.', 'UGA':'Georgia',
-	'GTECH':'Georgia Tech', 'HAW':'Hawaii', 'HOU':'Houston',
-	'IDAHO':'Idaho', 'ILL':'Illinois', 'IND':'Indiana',
-	'IOWA':'Iowa', 'IAST':'Iowa St.', 'KAN':'Kansas',
-	'KSST':'Kansas St.', 'KENT':'Kent St.', 'UK':'Kentucky',
-	'LSU':'Louisiana St.', 'LTECH':'Louisiana Tech', 'ULL':'Louisiana-Lafayette',
-	'ULM':'Louisiana-Monroe', 'LOU':'Louisville', 'MRSHL':'Marshall',
-	'MARY':'Maryland', 'MASS':'Massachusetts', 'MEM':'Memphis',
-	'MIAF':'Miami (FL)', 'MIAO':'Miami (OH)', 'MICH':'Michigan',
-	'MIST':'Michigan St.', 'MTENN':'Middle Tennessee', 'MINN':'Minnesota',
-	'MISS':'Mississippi', 'MSST':'Mississippi St.', 'MIZZ':'Missouri',
-	'NAVY':'Navy', 'NEB':'Nebraska', 'NEV':'Nevada',
-	'UNLV':'Nevada-Las Vegas', 'UNM':'New Mexico', 'NMST':'New Mexico St.',
-	'UNC':'North Carolina', 'NCST':'North Carolina St.', 'NTEX':'North Texas',
-	'NILL':'Northern Illinois', 'NWEST':'Northwestern', 'NDAME':'Notre Dame',
-	'OHIO':'Ohio', 'OHST':'Ohio St.', 'OKST':'Oklahoma St.',
-	'OREG':'Oregon', 'ORST':'Oregon St.', 'PSU':'Penn St.',
-	'PITT':'Pittsburgh', 'PURD':'Purdue', 'RICE':'Rice',
-	'RUTG':'Rutgers', 'SDSU':'San Diego St.', 'SJSU':'San Jose St.',
-	'SBAMA':'South Alabama', 'SCAR':'South Carolina', 'USF':'South Florida',
-	'SCAL':'Southern California', 'SMU':'Southern Methodist', 'SMISS':'Southern Mississippi',
-	'STAN':'Stanford', 'SYR':'Syracuse', 'TMPLE':'Temple',
-	'TENN':'Tennessee', 'TEX':'Texas', 'TXAM':'Texas A&M',
-	'TCU':'Texas Christian', 'TXST':'Texas St.', 'TTECH':'Texas Tech',
-	'UTEP':'Texas-El Paso', 'UTSA':'Texas-San Antonio', 'TOL':'Toledo',
-	'TROY':'Troy', 'TLNE':'Tulane', 'TULSA':'Tulsa',
-	'UCLA':'UCLA ', 'UTAH':'Utah', 'UTST':'Utah St.',
-	'VAND':'Vanderbilt', 'UVA':'Virginia', 'VTECH':'Virginia Tech',
-	'WAKE':'Wake Forest', 'WASH':'Washington', 'WSU':'Washington St.',
-	'WVU':'West Virginia', 'WKU':'Western Kentucky', 'WMU':'Western Michigan',
-	'WIS':'Wisconsin', 'WYO':'Wyoming'
-	}
 
+	#A class for generating fake games that look
+	#for just like SportsRadar API games for testing
+
+	#@ToDo: Unique rankings (can't have two rank 1's)
+	#@ToDo: FCS Teams
+	#@ToDo: Title (for isImportant)
+
+	FBS_TEAMS = {
+	'AF'   : 'Air Force', 'AKRN':'Akron', 'BAMA':'Alabama', 
+	'UAB'  : 'Alabama-Birmingham', 'ARIZ':'Arizona', 'ARST':'Arkansas St.', 
+	'ARMY' : 'Army', 'AUB':'Auburn', 'BALL':'Ball St.', 'BAY':'Baylor', 
+	'BOISE': 'Boise St.', 'BC':'Boston College', 'BG':'Bowling Green', 
+	'BYU'  : 'Brigham Young', 'BUF':'Buffalo', 'CAL':'California', 
+	'UCF'  : 'Central Florida', 'CMU':'Central Michigan', 'CIN':'Cincinnati', 
+	'CLEM' : 'Clemson', 'COL':'Colorado', 'CSU':'Colorado St.', 
+	'CONN' : 'Connecticut', 'DUKE':'Duke', 'ECU':'East Carolina', 
+	'EMU'  : 'Eastern Michigan', 'UF':'Florida', 'FAU':'Florida Atlantic', 
+	'FIU'  : 'Florida International', 'FSU':'Florida St.', 'FRSNO':'Fresno St.', 
+	'UGA'  : 'Georgia', 'GTECH':'Georgia Tech', 'HAW':'Hawaii', 
+	'HOU'  : 'Houston', 'IDAHO':'Idaho', 'ILL':'Illinois', 'IND':'Indiana', 
+	'IOWA' : 'Iowa', 'IAST':'Iowa St.', 'KAN':'Kansas', 
+	'KSST' : 'Kansas St.', 'KENT':'Kent St.', 'UK':'Kentucky', 
+	'LSU'  : 'Louisiana St.', 'LTECH':'Louisiana Tech', 'ULL':'Louisiana-Lafayette', 
+	'ULM'  : 'Louisiana-Monroe', 'LOU':'Louisville', 'MRSHL':'Marshall', 
+	'MARY' : 'Maryland', 'MASS':'Massachusetts', 'MEM':'Memphis', 
+	'MIAF' : 'Miami (FL)', 'MIAO':'Miami (OH)', 'MICH':'Michigan', 
+	'MIST' : 'Michigan St.', 'MTENN':'Middle Tennessee', 'MINN':'Minnesota', 
+	'MISS' : 'Mississippi', 'MSST':'Mississippi St.', 'MIZZ':'Missouri', 
+	'NAVY' : 'Navy', 'NEB':'Nebraska', 'NEV':'Nevada', 
+	'UNLV' : 'Nevada-Las Vegas', 'UNM':'New Mexico', 'NMST':'New Mexico St.', 
+	'UNC'  : 'North Carolina', 'NCST':'North Carolina St.', 'NTEX':'North Texas', 
+	'NILL' : 'Northern Illinois', 'NWEST':'Northwestern', 'NDAME':'Notre Dame', 
+	'OHIO' : 'Ohio', 'OHST':'Ohio St.', 'OKST':'Oklahoma St.', 
+	'OREG' : 'Oregon', 'ORST':'Oregon St.', 'PSU':'Penn St.', 
+	'PITT' : 'Pittsburgh', 'PURD':'Purdue', 'RICE':'Rice', 
+	'RUTG' : 'Rutgers', 'SDSU':'San Diego St.', 'SJSU':'San Jose St.', 
+	'SBAMA': 'South Alabama', 'SCAR':'South Carolina', 'USF':'South Florida', 
+	'SCAL' : 'Southern California', 'SMU':'Southern Methodist', 'SMISS':'S. Mississippi', 
+	'STAN' : 'Stanford', 'SYR':'Syracuse', 'TMPLE':'Temple', 
+	'TENN' : 'Tennessee', 'TEX':'Texas', 'TXAM':'Texas A&M', 
+	'TCU'  : 'Texas Christian', 'TXST':'Texas St.', 'TTECH':'Texas Tech', 
+	'UTEP' : 'Texas-El Paso', 'UTSA':'Texas-San Antonio', 'TOL':'Toledo', 
+	'TROY' : 'Troy', 'TLNE':'Tulane', 'TULSA':'Tulsa', 
+	'UCLA' : 'UCLA ', 'UTAH':'Utah', 'UTST':'Utah St.', 
+	'VAND' : 'Vanderbilt', 'UVA':'Virginia', 'VTECH':'Virginia Tech', 
+	'WAKE' : 'Wake Forest', 'WASH':'Washington', 'WSU':'Washington St.', 
+	'WVU'  : 'West Virginia', 'WKU':'Western Kentucky', 'WMU':'Western Michigan', 
+	'WIS'  : 'Wisconsin', 'WYO':'Wyoming'
+	}
+	
 	def __init__(self):
 
 		self.FBS_TEAMS_COPY   = copy(self.FBS_TEAMS)
@@ -185,9 +192,12 @@ class Game:
 		print('%s deconstructed' % (self))
 
 class SportsRadarService:
+
 	#A Class for handling Sports Radar API calls
+
 	#@ToDo: Rename me to SportsRadar NCAA Service?
 	#@ToDo: proper error message reporting
+
 	def __init__(self, sports_radar_api_key):
 		self.raw_request_data = {}
 		self.ranks            = {}
