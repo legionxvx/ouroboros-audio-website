@@ -50,9 +50,9 @@ def render_from_fake_games(sheet_id, sheet_name, season, week):
 		return "<h1>Request spreadsheet entity %s or sub_sheet vals %s not found.</h1>" % (sheet_id, already_there)
 	print("VALS", already_there)
 
-
-	for x in range(len(already_there)):
-		print("Val %s" % (already_there[x]))
+	if already_there != 0:
+		for x in range(len(already_there)):
+			print("Val %s" % (already_there[x]))
 
 	#Assuming scribe service didn't bail, let's grab the games
 	#radar_service = SportsRadarService(SPORTSRADAR_API_KEY)
@@ -184,7 +184,8 @@ def render_from_real_games(sheet_id, sheet_name, season, week):
 
 	return render_template('flask.html',
 		seq=real_games,
-		phrase=random.choice(FUNNY_PHRASES),
+		remote=remote,
+		phrase=choice(FUNNY_PHRASES),
 		sheet_id_truncated=sheet_id[0:7] + "...",
 		sub_sheet=sheet_name,
 		season=season,
@@ -222,12 +223,12 @@ def flask_post():
 
 		#print('Posted - ID: %s, Name: %s, Season: %s, Week: %s.' % (sheet_id, sheet_name, season, week))
 
-		if request.form["FAKEGAMES"]:
-			return render_from_fake_games(sheet_id, sheet_name, season, week)
-		else:
-
+		if 'FAKEGAMES' in request.form:
+			if request.form['FAKEGAMES']:
+				return render_from_fake_games(sheet_id, sheet_name, season, week)
+		
 		#render_from_real_games() will return a render_template(flask.html)
-			return render_from_real_games(sheet_id, sheet_name, season, week)
+		return render_from_real_games(sheet_id, sheet_name, season, week)
 
 @FLASK_APP.route("/")
 @FLASK_APP.route("/football_post", methods=['GET', 'POST'])

@@ -1,6 +1,7 @@
 from random import choice, randint
 from time import sleep
 from copy import copy
+
 from requests import get, Request, Session
 
 from httplib2 import Http
@@ -148,9 +149,7 @@ class Game:
 	}
 
 	#for organizing game data
-	def __init__(self, game, rankings, test):
-		if test:
-			return
+	def __init__(self, game, rankings):
 		self.home_acr    = game['home']
 		self.away_acr    = game['away']
 		self.home_team   = self.lookup_full_name(game['home'])
@@ -184,45 +183,57 @@ class Game:
 
 	def __del__(self):
 		print('%s deconstructed' % (self))
+
 class SportsRadarService:
-	#for handling sportsradar API calls
+	#A Class for handling Sports Radar API calls
+	#@ToDo: Rename me to SportsRadar NCAA Service?
+	#@ToDo: proper error message reporting
 	def __init__(self, sports_radar_api_key):
-		self.raw_request_data  = {} #class table for referencing all request json data
-		self.ranks       = {}
-		self.apiCalls    = 0
-		self.session     = Session()
-		self.agent       = {"user-agent": "cfb-sheets-writer-script"}
-		self.init_params = {'limit':'9999999', 'api_key': sports_radar_api_key}
+		self.raw_request_data = {}
+		self.ranks            = {}
+		self.apiCalls         = 0
+		self.sleep_time       = 1
+		self.session          = Session()
+		self.root             = "http://api.sportradar.us/ncaafb-t1"
+		self.agent            = {"user-agent": "YASSP-PY-script"}
+		self.init_params      = {'limit':'9999999',
+								'api_key': sports_radar_api_key}
+
 		self.session.headers.update(self.agent)
 		self.session.params.update(self.init_params)
 
-	def get_games(self, season, week):
+	def err(self, error):
+		print("Error in SportsRadarService: %s." % error)
 
+	def get_games(self, season, week):
 		try:
-			response = self.session.get("http://api.sportradar.us/ncaafb-t1/" + str(season) + "/REG/" + str(week) + "/schedule.json?").json()
-		except ValueError:
-			print("Invalid API Key for SportsRadar Calls, or no json was returned")
+			response = self.session.get("%s/%s/REG/%s/schedule.json?"
+				% (self.root, season, week)
+				).json()
+		except ValueError as e:
+			self.err(e)
 			self.apiCalls += 1
 			return False
 
 		self.raw_request_data['game_data_json'] = response
-		sleep(1)
+		sleep(self.sleep_time)
 		self.apiCalls += 1
 		return response['games'] if 'games' in response.keys() else response
 
 	def get_ranks(self, season, week):
 		poll = "AP25" if int(week) < 10 else "CFP25"
-
 		try:
-			response = self.session.get("http://api.sportradar.us/ncaafb-t1/polls/" + str(poll) + "/" + str(season) + "/" + str(week) + "/rankings.json?").json()
-		except ValueError:
-			print("Invalid API Key for SportsRadar Calls, or no json was returned")
+			response = self.session.get("%s/polls/%s/%s/%s/rankings.json?"
+				% (self.root, poll, season, week)
+				).json()
+		except ValueError as e:
+			self.err(e)
 			self.apiCalls += 1
 			return False
 
 		self.raw_request_data['poll_data_json'] = response
 
-		sleep(1)
+		sleep(self.sleep_time)
 		self.apiCalls += 1
 
 		if not('rankings' in response.keys()):
@@ -235,19 +246,22 @@ class SportsRadarService:
 	def get_team_hierarchy(self, division):
 
 		try:
-			response = self.session.get("http://api.sportradar.us/ncaafb-t1/teams/" + str(division) + "/hierarchy.json?").json()
-		except ValueError:
-			print("Invalid API Key for SportsRadar Calls, or no json was returned")
+			response = self.session.get("%s/%s/hierarchy.json?" 
+				% (self.root, division)
+				)
+		except ValueError as e:
+			self.err(e)
 			self.apiCalls += 1
 			return False
 
 		self.raw_request_data['team_hierarchy_json'] = response
-		sleep(1)
+		sleep(self.sleep_time)
 		self.apiCalls += 1
 		return response
 
 	def __del__(self):
 		print('%s deconstructed. Calls to API: %s.' % (self, self.apiCalls))
+
 class SheetScribeService:
 	#Google sheets wriiiiiiiterrrrrr, Google Sheets wriiiiiiiterrrr
 	def __init__(self, sheet_id, scope, apiKey):
@@ -260,6 +274,8 @@ class SheetScribeService:
 
 		if not self.creds or self.creds.invalid:
 			try:
+				client.flow_from_clientsecrets(
+					)
 				self.flow  = client.flow_from_clientsecrets('client_secret.json', self.scope)
 				self.creds = tools.run_flow(self.flow, self.storage)
 				self.auth  = True
