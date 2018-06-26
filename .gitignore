@@ -8,6 +8,4 @@ ouroboros.audio/*.sublime-*
 flask/*.json
 flask/sports-radar-api-key
 
-#FLASK EXPORT#
-##############
-flask/*.pyc
+*.pyc
