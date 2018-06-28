@@ -1,6 +1,7 @@
 from random import choice, randint
 from time import sleep
 from copy import copy
+from json import loads
 
 from requests import get, Request, Session
 
@@ -18,50 +19,10 @@ class FakeGame:
 	#@ToDo: Unique rankings (can't have two rank 1's)
 	#@ToDo: FCS Teams
 	#@ToDo: Title (for isImportant)
-
-	FBS_TEAMS = {
-	'AF'   : 'Air Force', 'AKRN':'Akron', 'BAMA':'Alabama', 
-	'UAB'  : 'Alabama-Birmingham', 'ARIZ':'Arizona', 'ARST':'Arkansas St.', 
-	'ARMY' : 'Army', 'AUB':'Auburn', 'BALL':'Ball St.', 'BAY':'Baylor', 
-	'BOISE': 'Boise St.', 'BC':'Boston College', 'BG':'Bowling Green', 
-	'BYU'  : 'Brigham Young', 'BUF':'Buffalo', 'CAL':'California', 
-	'UCF'  : 'Central Florida', 'CMU':'Central Michigan', 'CIN':'Cincinnati', 
-	'CLEM' : 'Clemson', 'COL':'Colorado', 'CSU':'Colorado St.', 
-	'CONN' : 'Connecticut', 'DUKE':'Duke', 'ECU':'East Carolina', 
-	'EMU'  : 'Eastern Michigan', 'UF':'Florida', 'FAU':'Florida Atlantic', 
-	'FIU'  : 'Florida International', 'FSU':'Florida St.', 'FRSNO':'Fresno St.', 
-	'UGA'  : 'Georgia', 'GTECH':'Georgia Tech', 'HAW':'Hawaii', 
-	'HOU'  : 'Houston', 'IDAHO':'Idaho', 'ILL':'Illinois', 'IND':'Indiana', 
-	'IOWA' : 'Iowa', 'IAST':'Iowa St.', 'KAN':'Kansas', 
-	'KSST' : 'Kansas St.', 'KENT':'Kent St.', 'UK':'Kentucky', 
-	'LSU'  : 'Louisiana St.', 'LTECH':'Louisiana Tech', 'ULL':'Louisiana-Lafayette', 
-	'ULM'  : 'Louisiana-Monroe', 'LOU':'Louisville', 'MRSHL':'Marshall', 
-	'MARY' : 'Maryland', 'MASS':'Massachusetts', 'MEM':'Memphis', 
-	'MIAF' : 'Miami (FL)', 'MIAO':'Miami (OH)', 'MICH':'Michigan', 
-	'MIST' : 'Michigan St.', 'MTENN':'Middle Tennessee', 'MINN':'Minnesota', 
-	'MISS' : 'Mississippi', 'MSST':'Mississippi St.', 'MIZZ':'Missouri', 
-	'NAVY' : 'Navy', 'NEB':'Nebraska', 'NEV':'Nevada', 
-	'UNLV' : 'Nevada-Las Vegas', 'UNM':'New Mexico', 'NMST':'New Mexico St.', 
-	'UNC'  : 'North Carolina', 'NCST':'North Carolina St.', 'NTEX':'North Texas', 
-	'NILL' : 'Northern Illinois', 'NWEST':'Northwestern', 'NDAME':'Notre Dame', 
-	'OHIO' : 'Ohio', 'OHST':'Ohio St.', 'OKST':'Oklahoma St.', 
-	'OREG' : 'Oregon', 'ORST':'Oregon St.', 'PSU':'Penn St.', 
-	'PITT' : 'Pittsburgh', 'PURD':'Purdue', 'RICE':'Rice', 
-	'RUTG' : 'Rutgers', 'SDSU':'San Diego St.', 'SJSU':'San Jose St.', 
-	'SBAMA': 'South Alabama', 'SCAR':'South Carolina', 'USF':'South Florida', 
-	'SCAL' : 'Southern California', 'SMU':'Southern Methodist', 'SMISS':'S. Mississippi', 
-	'STAN' : 'Stanford', 'SYR':'Syracuse', 'TMPLE':'Temple', 
-	'TENN' : 'Tennessee', 'TEX':'Texas', 'TXAM':'Texas A&M', 
-	'TCU'  : 'Texas Christian', 'TXST':'Texas St.', 'TTECH':'Texas Tech', 
-	'UTEP' : 'Texas-El Paso', 'UTSA':'Texas-San Antonio', 'TOL':'Toledo', 
-	'TROY' : 'Troy', 'TLNE':'Tulane', 'TULSA':'Tulsa', 
-	'UCLA' : 'UCLA ', 'UTAH':'Utah', 'UTST':'Utah St.', 
-	'VAND' : 'Vanderbilt', 'UVA':'Virginia', 'VTECH':'Virginia Tech', 
-	'WAKE' : 'Wake Forest', 'WASH':'Washington', 'WSU':'Washington St.', 
-	'WVU'  : 'West Virginia', 'WKU':'Western Kentucky', 'WMU':'Western Michigan', 
-	'WIS'  : 'Wisconsin', 'WYO':'Wyoming'
-	}
 	
+	fbs_json = open('fakegames_fbs_dict.json', 'r').read()
+	FBS_TEAMS = loads(fbs_json)
+
 	def __init__(self):
 
 		self.FBS_TEAMS_COPY   = copy(self.FBS_TEAMS)
@@ -104,56 +65,10 @@ class FakeGame:
 		print('%s deconstructed' % (self))
 class Game:
 
-	FBS_TEAMS = {'WF': 'Wake Forest', 'GST': 'Georgia State', 'LIB': 'Liberty',
-	'BC': 'Boston College', 'MFL': 'Miami (FL)', 'BGN': 'Bowling Green', 'MIZ': 'Missouri',
-	'NAV': 'Navy', 'MICH': 'Michigan', 'MIS': 'Ole Miss', 'BOISE': 'Boise State', 'GSO': 'Georgia Southern',
-	'OHI': 'Ohio', 'IOW': 'Iowa', 'SAB': 'South Alabama', 'AUB': 'Auburn', 'MIN': 'Minnesota', 'UAB': 'UAB',
-	'PIT': 'Pittsburgh', 'ILL': 'Illinois', 'CHA': 'Charlotte', 'GT': 'Georgia Tech', 'VAN': 'Vanderbilt',
-	'FIU': 'Florida International', 'BYU': 'Brigham Young', 'TXAM': 'Texas A&M', 'WMC': 'Western Michigan',
-	'KNT': 'Kent State', 'HAW': 'Hawaii', 'MAR': 'Maryland', 'NIL': 'Northern Illinois', 'APP': 'Appalachian State',
-	'KAN': 'Kansas', 'SYR': 'Syracuse', 'RICE': 'Rice', 'KST': 'Kansas State', 'EMC': 'Eastern Michigan',
-	'CMC': 'Central Michigan', 'BAMA': 'Alabama', 'TSA': 'Tulsa', 'NEV': 'Nevada', 'FLA': 'Florida', 'UGA': 'Georgia',
-	'TCU': 'TCU', 'OSU': 'Ohio State', 'TXST': 'Texas State', 'WVU': 'West Virginia', 'LSU': 'Louisianna State', 'UCONN': 'Connecticut',
-	'UVA': 'Virginia', 'BUF': 'Buffalo', 'TRY': 'Troy', 'CSU': 'Colorado State', 'NM': 'New Mexico', 'OKS': 'Oklahoma State',
-	'TEN': 'Tennessee', 'TUL': 'Tulane', 'MOH': 'Miami (OH)', 'RUT': 'Rutgers', 'UMASS': 'Massachusetts', 'OKL': 'Oklahoma',
-	'PSU': 'Penn State', 'AKR': 'Akron', 'SMU': 'Southern Methodist', 'ULM': 'Louisiana-Monroe', 'NEB': 'Nebraska', 'ISU': 'Iowa State',
-	'FSU': 'Florida State', 'WYO': 'Wyoming', 'COL': 'Colorado', 'TEM': 'Temple', 'ASU': 'Arizona State', 'NC': 'North Carolina',
-	'ND': 'Notre Dame', 'ODU': 'Old Dominion', 'TEX': 'Texas', 'ECU': 'East Carolina', 'TEP': 'UTEP', 'MSU': 'Michigan State',
-	'NW': 'Northwestern', 'BALL': 'Ball State', 'CAL': 'California', 'FRE': 'Fresno State', 'CC': 'Coastal Carolina', 'CLE': 'Clemson',
-	'UNLV': 'UNLV', 'WAS': 'Washington', 'NTX': 'North Texas', 'NMS': 'New Mexico State', 'MEM': 'Memphis', 'UCLA': 'UCLA',
-	'MSST': 'Mississippi State', 'WIS': 'Wisconsin', 'SC': 'South Carolina', 'ORE': 'Oregon', 'PUR': 'Purdue', 'USF': 'South Florida',
-	'USC': 'South California', 'USM': 'Southern Miss', 'MSH': 'Marshall', 'CIN': 'Cincinnati', 'BAY': 'Baylor', 'DUK': 'Duke', 'WST': 'Washington State',
-	'TOL': 'Toledo', 'LOU': 'Louisville', 'TT': 'Texas Tech', 'FAU': 'Florida Atlantic', 'UCF': 'UCF', 'LT': 'Louisiana Tech',
-	'UTSA': 'UTSA', 'SJS': 'San Jose State', 'ARKS': 'Arkansas State', 'STA': 'Stanford', 'AF': 'Air Force', 'MTS': 'Middle Tennessee',
-	'UTH': 'Utah', 'IU': 'Indiana', 'UTS': 'Utah State', 'HOU': 'Houston', 'VT': 'Virginia Tech', 'ULL': 'Louisiana-Lafayette',
-	'ORS': 'Oregon State', 'NCST': 'North Carolina State', 'SDSU': 'San Diego State', 'WKY': 'Western Kentucky', 'ARI': 'Arizona',
-	'ARK': 'Arkansas', 'ARM': 'Army', 'KEN': 'Kentucky'
-	}
-
-	FCS_TEAMS = {'WC': 'Western Carolina', 'HAMP': 'Hampton', 'WM': 'William & Mary', 'DRT': 'Dartmouth', 'JM': 'James Madison',
-	'CCH': 'Charleston Southern', 'NAT': 'North Carolina A&T', 'UNI': 'Northern Iowa', 'NAZ': 'Northern Arizona', 'CPS': 'Cal Poly',
-	'ALCST': 'Alcorn State', 'SIL': 'Southern Illinois', 'SAM': 'Samford', 'MUR': 'Murray State', 'PRI': 'Princeton',
-	'JAC': 'Jacksonville', 'RIL': 'Rhode Island', 'PRV': 'Prairie View A&M', 'RM': 'Robert Morris', 'UMAINE': 'Maine',
-	'SAU': 'Stephen F. Austin', 'VAL': 'Valparaiso', 'JVS': 'Jacksonville State', 'FAMU': 'Florida A&M', 'CHT': 'Chattanooga',
-	'HAR': 'Harvard', 'SVS': 'Savannah State', 'LAM': 'Lamar', 'APY': 'Austin Peay', 'NIC': 'Nicholls State', 'LAF': 'Lafayette',
-	'VIL': 'Villanova', 'APB': 'Arkansas-Pine Bluff', 'TSO': 'Texas Southern', 'FUR': 'Furman', 'ACU': 'Abilene Christian',
-	'SDS': 'South Dakota State', 'CMB': 'Columbia', 'DRA': 'Drake', 'GTOWN': 'Georgetown', 'DEL': 'Delaware', 'HB': 'Houston Baptist',
-	'HC': 'Holy Cross', 'YSU': 'Youngstown State', 'SCH': 'Sacred Heart', 'NWS': 'Northwestern State', 'BUT': 'Butler', 'MNM': 'Monmouth',
-	'BUC': 'Bucknell', 'SCS': 'South Carolina State', 'SHS': 'Sam Houston State', 'FOR': 'Fordham', 'DLS': 'Delaware State',
-	'NFS': 'Norfolk State', 'GRA': 'Grambling State', 'EW': 'Eastern Washington', 'WOF': 'Wofford', 'TNST': 'Tennessee State',
-	'STU': 'Stetson', 'MOS': 'Montana State', 'MOR': 'Morehead State', 'KENN': 'Kennesaw State', 'MGN': 'Morgan State', 'COR': 'Cornell',
-	'CSUS': 'Sacramento State', 'GWB': 'Gardner-Webb', 'IDS': 'Idaho State', 'PEN': 'Pennsylvania', 'SUT': 'Southern Utah',
-	'ILS': 'Illinois State', 'EKY': 'Eastern Kentucky', 'BCU': 'Bethune-Cookman', 'IDA': 'Idaho', 'NH': 'New Hampshire', 'MONT': 'Montana',
-	'JST': 'Jackson State', 'CCSU': 'Central Connecticut State', 'SEM': 'Southeast Missouri State', 'SEL': 'Southeastern Louisiana',
-	'CGT': 'Colgate', 'MVS': 'Mississippi Valley State', 'ELO': 'Elon', 'WAG': 'Wagner', 'UNA': 'North Alabama', 'UND': 'North Dakota',
-	'DUQ': 'Duquesne', 'NDS': 'North Dakota State', 'NOCO': 'Northern Colorado', 'BRY': 'Bryant University', 'VMI': 'Virginia Military Institute',
-	'LEI': 'Lehigh', 'WIL': 'Western Illinois', 'ALB': 'Albany', 'SU': 'Southern University', 'BRN': 'Brown', 'MER': 'Mercer',
-	'SBK': 'Stony Brook', 'PRES': 'Presbyterian', 'SD': 'South Dakota', 'WBS': 'Weber State', 'AAM': 'Alabama A&M', 'MST': 'Marist',
-	'TWN': 'Towson', 'PRST': 'Portland State', 'RCH': 'Richmond', 'CAM': 'Campbell', 'CIT': 'Citadel', 'EIL': 'Eastern Illinois',
-	'DAV': 'Davidson', 'UCD': 'UC Davis', 'UCA': 'Central Arkansas', 'MIZST': 'Missouri State', 'DAY': 'Dayton', 'TNT': 'Tennessee Tech',
-	'STF': 'St. Francis (PA)', 'IW': 'Incarnate Word', 'HOW': 'Howard', 'ETSU': 'East Tennessee State', 'TNM': 'Tennessee-Martin',
-	'MCN': 'McNeese State', 'INDS': 'Indiana State', 'YAL': 'Yale', 'SDG': 'San Diego', 'ALAST': 'Alabama State', 'NCC': 'North Carolina Central'
-	}
+	fbs_json = open('sports_radar_fbs_dict.json', 'r').read()
+	fcs_json = open('sports_radar_fcs_dict.json', 'r').read()
+	FBS_TEAMS = loads(fbs_json)
+	FCS_TEAMS = loads(fcs_json)
 
 	#for organizing game data
 	def __init__(self, game, rankings):
