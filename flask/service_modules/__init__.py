@@ -14,14 +14,17 @@ from oauth2client.clientsecrets import InvalidClientSecretsError
 class FakeGame:
 
 	#A class for generating fake games that look
-	#for just like SportsRadar API games for testing
+	#just like SportsRadar API games for testing
 
 	#@ToDo: Unique rankings (can't have two rank 1's)
 	#@ToDo: FCS Teams
 	#@ToDo: Title (for isImportant)
+	#@ToDO: Generate Fake Game function, instead of 
+	#generating on __init__()
 	
 	fbs_json = open('fakegames_fbs_dict.json', 'r').read()
 	FBS_TEAMS = loads(fbs_json)
+	RANKS = [i for i in range(1, 26)]
 
 	def __init__(self):
 
@@ -37,20 +40,18 @@ class FakeGame:
 		self.gameTime    = 'future'
 		self.isImportant = False
 		self.isRanked    = True
-		self.homeRank    = str(randint(1, 25)) if randint(0,10) % 10 else 'U'
-		self.awayRank    = str(randint(1, 25)) if randint(0,10) % 10 else 'U'
+		self.homeRank    = choice(RANKS) if randint(0,10) % 10 else 'U'
+		self.awayRank    = choice(RANKS) if randint(0,10) % 10 else 'U'
 		self.home_points = self.fake_score(self.homeRank)
 		self.away_points = self.fake_score(self.awayRank)
 
 	def lookup_full_name(self, acronym):
-
 		if acronym in self.FBS_TEAMS.keys():
 			return self.FBS_TEAMS[acronym]
 		else:
 			return acronym
 
 	def fake_score(self, rank):
-
 		if rank >= 10:
 			points_from_td  = randint(0, 8) * 7 if not(randint(0, 5) % 5) else randint(0, 5) * 7
 		else:
@@ -63,6 +64,56 @@ class FakeGame:
 
 	def __del__(self):
 		print('%s deconstructed' % (self))
+
+class FakeGameGenerator:
+	
+	fbs_json = open('fakegames_fbs_dict.json', 'r').read()
+	FBS_TEAMS = loads(fbs_json)
+	RANKS = [i for i in range(1, 26)]
+
+	def __init__(self):
+
+		self.FBS_TEAMS_COPY   = copy(self.FBS_TEAMS)
+		self.home_team_choice = choice(self.FBS_TEAMS_COPY.keys())
+		# ensures a unique choice by removing home team from dict
+		del self.FBS_TEAMS_COPY[self.home_team_choice]
+		self.away_team_choice = choice(self.FBS_TEAMS_COPY.keys())
+
+		self.home_team   = self.lookup_full_name(self.home_team_choice)
+		self.away_team   = self.lookup_full_name(self.away_team_choice)
+		self.gameStatus  = 'scheduled'
+		self.gameTime    = 'future'
+		self.isImportant = False
+		self.isRanked    = True
+		self.homeRank    = choice(RANKS) if randint(0,10) % 10 else 'U'
+		self.awayRank    = choice(RANKS) if randint(0,10) % 10 else 'U'
+		self.home_points = self.fake_score(self.homeRank)
+		self.away_points = self.fake_score(self.awayRank)
+
+	def generate_new_fake_game(self):
+		self.home_acro = choice(self.FBS_TEAMS.keys())
+		del self.FBS_TEAMS[self.home_acro]
+
+	def lookup_full_name(self, acronym):
+		if acronym in self.FBS_TEAMS.keys():
+			return self.FBS_TEAMS[acronym]
+		else:
+			return acronym
+
+	def fake_score(self, rank):
+		if rank >= 10:
+			points_from_td  = randint(0, 8) * 7 if not(randint(0, 5) % 5) else randint(0, 5) * 7
+		else:
+			points_from_td  = randint(0, 5) * 7
+
+		points_from_fg      = randint(0, 4) * 3
+		points_from_safties = randint(0, 3) * 2 if not(randint(1, 10) % 10) else 0
+
+		return points_from_td + points_from_fg + points_from_safties
+
+	def __del__(self):
+		print('%s deconstructed' % (self))
+
 class Game:
 
 	fbs_json = open('sports_radar_fbs_dict.json', 'r').read()
