@@ -5,8 +5,12 @@ from flask import Flask, render_template, request, session
 
 #@ToDo: Cleanup this top portion and constants before function defs
 #@ToDo: Move Funny phrases into a json file or other such file
-#ToDo: Force max col width of 80
+#@ToDo: Force max col width of 80
 #@ToDo: Proper error_sheet.html
+#@ToDo: Condense imports into as few imports as possible
+#@ToDo: Rename flask-writer to YASSP (yet another score storing program)
+#@ToDo: Comment on ALL THE THINGS
+#@ToDo: Imlement reading back of scores
 
 directory            = os.path.dirname(os.path.abspath(__file__))
 sportsradar_key_file = os.path.join(directory, 'sports-radar-api-key')
@@ -37,7 +41,7 @@ def render_from_fake_games(sheet_id, sheet_name, season, week):
 	#@ToDo: Move writing names and ranks into /football_post function
 	#@ToDo: col width 80
 	#@ToDo: create a fake_flask.html for supporting new FakeGameGenerator class
-	#@ToDo: 
+	#@ToDo: rename templates to something more fitting
 
 
 	scribe    = SheetScribeService(sheet_id, 'https://www.googleapis.com/auth/spreadsheets', None)
@@ -134,6 +138,7 @@ def render_from_fake_games(sheet_id, sheet_name, season, week):
 def render_from_real_games(sheet_id, sheet_name, season, week):
 
 	#@ToDo Move writing names and ranks into /football_post function
+
 	scribe    = SheetScribeService(sheet_id, 'https://www.googleapis.com/auth/spreadsheets', None)
 	sub_sheet = sheet_name
 
@@ -209,7 +214,7 @@ def render_from_real_games(sheet_id, sheet_name, season, week):
 
 @FLASK_APP.route("/")
 def init():
-	#@ToDo: Put something better here
+	#@ToDo: Proper Startup template
 	return "<h1>running</h1>"
 
 @FLASK_APP.route("/")
@@ -220,6 +225,8 @@ def setup_flask():
 @FLASK_APP.route("/")
 @FLASK_APP.route("/ncaa-football/", methods=['GET', 'POST'])
 def flask_post():
+
+	#@ToDo: Super secret password check for now
 
 	if request.method == "POST":
 
