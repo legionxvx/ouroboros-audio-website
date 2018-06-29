@@ -25,7 +25,9 @@ class FakeGame:
 	#@ToDO: Generate Fake Game function, instead of 
 	#generating on __init__()
 	
-	fbs_json = open('fakegames_fbs_dict.json', 'r').read()
+	fbs_json_path = path.join(SCRIPT_DIR, 'fakegames_fbs_dict.json')
+	fbs_json = open(fbs_json_path, 'r').read()
+	
 	FBS_TEAMS = loads(fbs_json)
 	RANKS = [i for i in range(1, 26)]
 
@@ -124,9 +126,6 @@ class FakeGameGenerator:
 			self.awayRank    = self.generate_rank()
 			self.home_points = self.fake_score(self.homeRank)
 			self.away_points = self.fake_score(self.awayRank)
-		
-		else:
-			return False
 
 
 	def lookup_full_name(self, acronym):
@@ -171,8 +170,11 @@ class FakeGameGenerator:
 
 class Game:
 
-	fbs_json = open('sports_radar_fbs_dict.json', 'r').read()
-	fcs_json = open('sports_radar_fcs_dict.json', 'r').read()
+	fbs_json_path = path.join(SCRIPT_DIR, 'sports_radar_fbs_dict.json')
+	fcs_json_path = path.join(SCRIPT_DIR, 'sports_radar_fcs_dict.json')
+
+	fbs_json = open(fbs_json_path, 'r').read()
+	fcs_json = open(fcs_json_path, 'r').read()
 	FBS_TEAMS = loads(fbs_json)
 	FCS_TEAMS = loads(fcs_json)
 
@@ -363,13 +365,4 @@ class SheetScribeService:
 
 	def __del__(self):
 		print('%s deconstructed. Calls to API: %s.' % (self, self.apiCalls))
-
-
-game_gen = FakeGameGenerator()
-
-while game_gen.RANKS != []:
-	game_gen.generate_new_fake_game()
-	print(game_gen.awayRank,
-		  game_gen.away_team,
-		  game_gen.homeRank,
-		  game_gen.home_team)
+		

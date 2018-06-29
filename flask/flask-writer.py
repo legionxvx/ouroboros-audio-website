@@ -69,13 +69,16 @@ def render_from_fake_games(sheet_id, sheet_name, season, week):
 		#@ToDo: Proper error_sheet.html
 		return "Sheets Writer Service Module returned with: %s. Go back to setup." % (scribe.auth)
 
-	for i in range(26):
+	game_instance = FakeGameGenerator()
+	while game_instance.RANKS != []:
 
-		game_instance = FakeGame()
+		info = {}
+
+		game_instance.generate_new_fake_game()
 
 		#there were vals in the sheet already, sub them in
-		if already_there != 0 and already_there[i] != "":
-			game_instance.away_points = int(already_there[i][0])
+		#if already_there != 0 and already_there[i] != "":
+		#	game_instance.away_points = int(already_there[i][0])
 
 		#ToDo: If game_instance.isImportant it must be a bowl game
 		#we need to pass the title into our flask.html to signify this
@@ -106,6 +109,8 @@ def render_from_fake_games(sheet_id, sheet_name, season, week):
 	#increment our counters for fun stats in post.html
 	session['google_sheets_api_calls'] += scribe.apiCalls
 	#session['sportsradar_api_calls']   += radar_service.apiCalls
+
+	print(fake_games)
 
 	return render_template('flask.html',
 		seq=fake_games,
