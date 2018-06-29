@@ -2,6 +2,7 @@ from random import choice, randint
 from time import sleep
 from copy import copy
 from json import loads
+from os import path
 
 from requests import get, Request, Session
 
@@ -11,6 +12,8 @@ from oauth2client import file, client, tools
 from apiclient.discovery import build, HttpError
 from oauth2client.clientsecrets import InvalidClientSecretsError
 
+SCRIPT_DIR = path.dirname(path.abspath(__file__))
+
 class FakeGame:
 
 	#A class for generating fake games that look
@@ -19,9 +22,9 @@ class FakeGame:
 	#@ToDo: Unique rankings (can't have two rank 1's)
 	#@ToDo: FCS Teams
 	#@ToDo: Title (for isImportant)
-	#@ToDO: Generate Fake Game function, instead of 
+	#@ToDO: Generate Fake Game function, instead of
 	#generating on __init__()
-	
+
 	fbs_json = open('fakegames_fbs_dict.json', 'r').read()
 	FBS_TEAMS = loads(fbs_json)
 	RANKS = [i for i in range(1, 26)]
@@ -40,8 +43,8 @@ class FakeGame:
 		self.gameTime    = 'future'
 		self.isImportant = False
 		self.isRanked    = True
-		self.homeRank    = choice(RANKS) if randint(0,10) % 10 else 'U'
-		self.awayRank    = choice(RANKS) if randint(0,10) % 10 else 'U'
+		self.homeRank    = choice(self.RANKS) if randint(0,10) % 10 else 'U'
+		self.awayRank    = choice(self.RANKS) if randint(0,10) % 10 else 'U'
 		self.home_points = self.fake_score(self.homeRank)
 		self.away_points = self.fake_score(self.awayRank)
 
@@ -66,7 +69,7 @@ class FakeGame:
 		print('%s deconstructed' % (self))
 
 class FakeGameGenerator:
-	
+
 	fbs_json = open('fakegames_fbs_dict.json', 'r').read()
 	FBS_TEAMS = loads(fbs_json)
 	RANKS = [i for i in range(1, 26)]
@@ -85,8 +88,8 @@ class FakeGameGenerator:
 		self.gameTime    = 'future'
 		self.isImportant = False
 		self.isRanked    = True
-		self.homeRank    = choice(RANKS) if randint(0,10) % 10 else 'U'
-		self.awayRank    = choice(RANKS) if randint(0,10) % 10 else 'U'
+		self.homeRank    = choice(self.RANKS) if randint(0,10) % 10 else 'U'
+		self.awayRank    = choice(self.RANKS) if randint(0,10) % 10 else 'U'
 		self.home_points = self.fake_score(self.homeRank)
 		self.away_points = self.fake_score(self.awayRank)
 
@@ -222,7 +225,7 @@ class SportsRadarService:
 	def get_team_hierarchy(self, division):
 
 		try:
-			response = self.session.get("%s/%s/hierarchy.json?" 
+			response = self.session.get("%s/%s/hierarchy.json?"
 				% (self.root, division)
 				)
 		except ValueError as e:
