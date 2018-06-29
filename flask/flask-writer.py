@@ -1,6 +1,6 @@
 import os
 from random import choice
-from service_modules import FakeGame, Game, SportsRadarService, SheetScribeService
+from service_modules import FakeGame, Game, SportsRadarService, SheetScribeService, FakeGameGenerator
 from flask import Flask, render_template, request, session
 
 directory            = os.path.dirname(os.path.abspath(__file__))
