@@ -99,7 +99,15 @@ def render_from_fake_games(sheet_id, sheet_name, season, week):
 			#passing the whole real_games list into
 			#flask.html means that we need to parse it there
 			#and not here, saving us a bunch of time
-			fake_games.append(game_instance)
+			info['away_team'] = game_instance.away_team
+			info['home_team'] = game_instance.home_team
+			info['awayRank'] = game_instance.awayRank
+			info['homeRank'] = game_instance.homeRank
+			info['away_points'] = game_instance.away_points
+			info['home_points'] = game_instance.home_points
+			info['gameTime'] = game_instance.gameTime
+			info['gameStatus'] = game_instance.gameStatus
+			fake_games.append(info)
 
 			away_ranks.append(game_instance.awayRank)
 			away_teams.append(game_instance.away_team)
@@ -122,8 +130,6 @@ def render_from_fake_games(sheet_id, sheet_name, season, week):
 	#increment our counters for fun stats in post.html
 	session['google_sheets_api_calls'] += scribe.apiCalls
 	#session['sportsradar_api_calls']   += radar_service.apiCalls
-
-	print(fake_games)
 
 	return render_template('flask.html',
 		seq=fake_games,
