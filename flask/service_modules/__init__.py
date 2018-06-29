@@ -12,6 +12,9 @@ from oauth2client import file, client, tools
 from apiclient.discovery import build, HttpError
 from oauth2client.clientsecrets import InvalidClientSecretsError
 
+#@ToDo: Force max col width of 80
+#@ToDo: Make classes work within a context manager?
+
 SCRIPT_DIR = path.dirname(path.abspath(__file__))
 
 class FakeGame:
@@ -79,6 +82,10 @@ class FakeGame:
 		print('%s deconstructed' % (self))
 
 class FakeGameGenerator:
+
+	#@ToDo: col width 80
+	#@ToDo: Improve chance generation
+	#ToDo: Improve score generator
 	
 	fbs_json_path = path.join(SCRIPT_DIR, 'fakegames_fbs_dict.json')
 	fbs_json = open(fbs_json_path, 'r').read()
@@ -169,6 +176,10 @@ class FakeGameGenerator:
 		print('%s deconstructed' % (self))
 
 class Game:
+
+	#@ToDo: col width 80
+	#@ToDo: clean up ugly ranking/important system
+	#@ToDo: implement format_time()
 
 	fbs_json_path = path.join(SCRIPT_DIR, 'sports_radar_fbs_dict.json')
 	fcs_json_path = path.join(SCRIPT_DIR, 'sports_radar_fcs_dict.json')
@@ -296,7 +307,12 @@ class SportsRadarService:
 		print('%s deconstructed. Calls to API: %s.' % (self, self.apiCalls))
 
 class SheetScribeService:
+	
 	#Google sheets wriiiiiiiterrrrrr, Google Sheets wriiiiiiiterrrr
+	#@ToDo: col width 80
+	#@ToDo: condense *_column_*() into one function with column argument
+	#@ToDo: cleanup var names acording to book
+
 	def __init__(self, sheet_id, scope, apiKey):
 		self.spreadsheetId = sheet_id
 		self.storage       = file.Storage('credentials.json')

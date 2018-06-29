@@ -3,6 +3,11 @@ from random import choice
 from service_modules import FakeGame, Game, SportsRadarService, SheetScribeService, FakeGameGenerator
 from flask import Flask, render_template, request, session
 
+#@ToDo: Cleanup this top portion and constants before function defs
+#@ToDo: Move Funny phrases into a json file or other such file
+#ToDo: Force max col width of 80
+#@ToDo: Proper error_sheet.html
+
 directory            = os.path.dirname(os.path.abspath(__file__))
 sportsradar_key_file = os.path.join(directory, 'sports-radar-api-key')
 remote               = False
@@ -29,7 +34,12 @@ FUNNY_PHRASES = ["Go Dawgs!", "Don't worry, we're all champions of life.", "All 
 
 def render_from_fake_games(sheet_id, sheet_name, season, week):
 
-	#@ToDo Move writing names and ranks into /football_post function
+	#@ToDo: Move writing names and ranks into /football_post function
+	#@ToDo: col width 80
+	#@ToDo: create a fake_flask.html for supporting new FakeGameGenerator class
+	#@ToDo: 
+
+
 	scribe    = SheetScribeService(sheet_id, 'https://www.googleapis.com/auth/spreadsheets', None)
 	sub_sheet = sheet_name
 
@@ -66,7 +76,6 @@ def render_from_fake_games(sheet_id, sheet_name, season, week):
 	home_teams = []
 
 	if not(scribe.auth):
-		#@ToDo: Proper error_sheet.html
 		return "Sheets Writer Service Module returned with: %s. Go back to setup." % (scribe.auth)
 
 	game_instance = FakeGameGenerator()
