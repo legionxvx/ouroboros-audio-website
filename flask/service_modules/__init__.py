@@ -36,9 +36,9 @@ class FakeGameGenerator:
 		#track of which ranks have been used
 
 		fbs_dict_copy         = copy(self.FBS_TEAMS)
-		self.home_team_choice = choice(fbs_list_copy.keys())
-		del fbs_list_copy[self.home_team_choice]
-		self.away_team_choice = choice(fbs_list_copy.keys())
+		self.home_team_choice = choice(fbs_dict_copy.keys())
+		del fbs_dict_copy[self.home_team_choice]
+		self.away_team_choice = choice(fbs_dict_copy.keys())
 
 		self.home_team   = self.lookup_full_name(self.home_team_choice)
 		self.away_team   = self.lookup_full_name(self.away_team_choice)

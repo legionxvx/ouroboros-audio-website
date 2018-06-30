@@ -3,13 +3,11 @@ from os import path, environ
 from service_modules import Game, SportsRadarService, SheetScribeService, FakeGameGenerator
 from flask import Flask, render_template, request, session
 
-#@ToDo: Move Funny phrases into a json file or other such file
 #@ToDo: Force max col width of 80
 #@ToDo: Proper error_sheet.html
 #@ToDo: Rename flask-writer to YASSP (yet another score storing program)
 #@ToDo: Comment on ALL THE THINGS
 #@ToDo: Imlement reading back of scores
-
 
 SCRIPT_DIR = path.dirname(path.abspath(__file__))
 
