@@ -17,89 +17,28 @@ from oauth2client.clientsecrets import InvalidClientSecretsError
 
 SCRIPT_DIR = path.dirname(path.abspath(__file__))
 
-class FakeGame:
-
-	#A class for generating fake games that look
-	#just like SportsRadar API games for testing
-
-	#@ToDo: Unique rankings (can't have two rank 1's)
-	#@ToDo: FCS Teams
-	#@ToDo: Title (for isImportant)
-	#@ToDO: Generate Fake Game function, instead of 
-	#generating on __init__()
-	
-	fbs_json_path = path.join(SCRIPT_DIR, 'fakegames_fbs_dict.json')
-	fbs_json = open(fbs_json_path, 'r').read()
-	
-	FBS_TEAMS = loads(fbs_json)
-	RANKS = [i for i in range(1, 26)]
-
-	def __init__(self):
-
-		self.FBS_TEAMS_COPY   = copy(self.FBS_TEAMS)
-		self.home_team_choice = choice(self.FBS_TEAMS_COPY.keys())
-		# ensures a unique choice by removing home team from dict
-		del self.FBS_TEAMS_COPY[self.home_team_choice]
-		self.away_team_choice = choice(self.FBS_TEAMS_COPY.keys())
-
-		self.home_team   = self.lookup_full_name(self.home_team_choice)
-		self.away_team   = self.lookup_full_name(self.away_team_choice)
-		self.gameStatus  = 'scheduled'
-		self.gameTime    = 'future'
-		self.isImportant = False
-		self.isRanked    = True
-		self.homeRank    = choice(self.RANKS) if randint(0,10) % 10 else 'U'
-		self.awayRank    = choice(self.RANKS) if randint(0,10) % 10 else 'U'
-		self.home_points = self.fake_score(self.homeRank)
-		self.away_points = self.fake_score(self.awayRank)
-
-	def choose_and_remove(list, fail_val=None):
-		if list != []:
-			list_choice = choice(list)
-			list.remove(list_choice)
-			return list_choice
-		else:
-			return fail_val
-
-	def lookup_full_name(self, acronym):
-		if acronym in self.FBS_TEAMS.keys():
-			return self.FBS_TEAMS[acronym]
-		else:
-			return acronym
-
-	def fake_score(self, rank):
-		if rank >= 10:
-			points_from_td  = randint(0, 8) * 7 if not(randint(0, 5) % 5) else randint(0, 5) * 7
-		else:
-			points_from_td  = randint(0, 5) * 7
-
-		points_from_fg      = randint(0, 4) * 3
-		points_from_safties = randint(0, 3) * 2 if not(randint(1, 10) % 10) else 0
-
-		return points_from_td + points_from_fg + points_from_safties
-
-	def __del__(self):
-		print('%s deconstructed' % (self))
-
 class FakeGameGenerator:
 
 	#@ToDo: col width 80
 	#@ToDo: Improve chance generation
 	#ToDo: Improve score generator
-	
+
 	fbs_json_path = path.join(SCRIPT_DIR, 'fakegames_fbs_dict.json')
 	fbs_json = open(fbs_json_path, 'r').read()
-	
+
 	FBS_TEAMS = loads(fbs_json)
 	RANKS = [i for i in range(1, 26)]
 
 	def __init__(self):
+		#it is important that we don't remove any init choices
+		#from our lists, to protect the integrity of the
+		#generate_new_fake_game() funtion, which does keep
+		#track of which ranks have been used
 
-		self.FBS_TEAMS_COPY   = copy(self.FBS_TEAMS)
-		self.home_team_choice = choice(self.FBS_TEAMS_COPY.keys())
-		# ensures a unique choice by removing home team from dict
-		del self.FBS_TEAMS_COPY[self.home_team_choice]
-		self.away_team_choice = choice(self.FBS_TEAMS_COPY.keys())
+		fbs_dict_copy         = copy(self.FBS_TEAMS)
+		self.home_team_choice = choice(fbs_list_copy.keys())
+		del fbs_list_copy[self.home_team_choice]
+		self.away_team_choice = choice(fbs_list_copy.keys())
 
 		self.home_team   = self.lookup_full_name(self.home_team_choice)
 		self.away_team   = self.lookup_full_name(self.away_team_choice)
@@ -107,8 +46,8 @@ class FakeGameGenerator:
 		self.gameTime    = 'future'
 		self.isImportant = False
 		self.isRanked    = True
-		self.homeRank    = choice(self.RANKS) if randint(0,10) % 10 else 'U'
-		self.awayRank    = choice(self.RANKS) if randint(0,10) % 10 else 'U'
+		self.homeRank    = choice(self.RANKS) if self.chance(10) else 'U'
+		self.awayRank    = choice(self.RANKS) if self.chance(10) else 'U'
 		self.home_points = self.fake_score(self.homeRank)
 		self.away_points = self.fake_score(self.awayRank)
 
@@ -117,13 +56,13 @@ class FakeGameGenerator:
 		if self.RANKS != []:
 
 			if self.FBS_TEAMS != {}:
-				self.home_team_choice = choice(self.FBS_TEAMS.keys())
-				del self.FBS_TEAMS[self.home_team_choice]
 				self.away_team_choice = choice(self.FBS_TEAMS.keys())
+				self.away_team = self.lookup_full_name(self.away_team_choice)
 				del self.FBS_TEAMS[self.away_team_choice]
+				self.home_team_choice = choice(self.FBS_TEAMS.keys())
+				self.home_team = self.lookup_full_name(self.home_team_choice)
+				del self.FBS_TEAMS[self.home_team_choice]
 
-			self.home_team   = self.lookup_full_name(self.home_team_choice)
-			self.away_team   = self.lookup_full_name(self.away_team_choice)
 			self.gameStatus  = 'scheduled'
 			self.gameTime    = 'future'
 			self.isImportant = False
@@ -143,12 +82,19 @@ class FakeGameGenerator:
 
 	def fake_score(self, rank):
 		if rank >= 10:
-			points_from_td  = randint(0, 8) * 7 if not(randint(0, 5) % 5) else randint(0, 5) * 7
+			if not(self.chance(5)):
+				points_from_td = randint(0, 8) * 7
+			else:
+				points_from_td = randint(0, 5) * 7
 		else:
-			points_from_td  = randint(0, 5) * 7
+			points_from_td = randint(0, 5) * 7
 
-		points_from_fg      = randint(0, 4) * 3
-		points_from_safties = randint(0, 3) * 2 if not(randint(1, 10) % 10) else 0
+		if not(self.chance(10)):
+			points_from_safties = randint(0, 3) * 2
+		else:
+			points_from_safties = 0
+
+		points_from_fg = randint(0, 4) * 3
 
 		return points_from_td + points_from_fg + points_from_safties
 
@@ -290,7 +236,7 @@ class SportsRadarService:
 	def get_team_hierarchy(self, division):
 
 		try:
-			response = self.session.get("%s/%s/hierarchy.json?" 
+			response = self.session.get("%s/%s/hierarchy.json?"
 				% (self.root, division)
 				)
 		except ValueError as e:
@@ -307,7 +253,7 @@ class SportsRadarService:
 		print('%s deconstructed. Calls to API: %s.' % (self, self.apiCalls))
 
 class SheetScribeService:
-	
+
 	#Google sheets wriiiiiiiterrrrrr, Google Sheets wriiiiiiiterrrr
 	#@ToDo: col width 80
 	#@ToDo: condense *_column_*() into one function with column argument
@@ -381,4 +327,3 @@ class SheetScribeService:
 
 	def __del__(self):
 		print('%s deconstructed. Calls to API: %s.' % (self, self.apiCalls))
-		

@@ -1,40 +1,39 @@
-import os
 from random import choice
-from service_modules import FakeGame, Game, SportsRadarService, SheetScribeService, FakeGameGenerator
+from os import path, environ
+from service_modules import Game, SportsRadarService, SheetScribeService, FakeGameGenerator
 from flask import Flask, render_template, request, session
 
-#@ToDo: Cleanup this top portion and constants before function defs
 #@ToDo: Move Funny phrases into a json file or other such file
 #@ToDo: Force max col width of 80
 #@ToDo: Proper error_sheet.html
-#@ToDo: Condense imports into as few imports as possible
 #@ToDo: Rename flask-writer to YASSP (yet another score storing program)
 #@ToDo: Comment on ALL THE THINGS
 #@ToDo: Imlement reading back of scores
 
-directory            = os.path.dirname(os.path.abspath(__file__))
-sportsradar_key_file = os.path.join(directory, 'sports-radar-api-key')
-remote               = False
 
-if "LOCATION" in os.environ:
-	if os.environ['LOCATION'] == "remote":
+SCRIPT_DIR = path.dirname(path.abspath(__file__))
+
+SPORTSRADAR_KEY_PATH = path.join(SCRIPT_DIR, 'sports-radar-api-key')
+SPORTSRADAR_API_KEY = open(SPORTSRADAR_KEY_PATH, "r").read().rstrip("\n\r")
+
+PHRASES_PATH = path.join(SCRIPT_DIR, 'phrases')
+PHRASES_FILE = open(PHRASES_PATH, "r")
+PHRASES = [line for line in PHRASES_FILE.read().split("\n")]
+
+FLASK_APP = Flask(__name__)
+SCOPE = "https://www.googleapis.com/auth/spreadsheets"
+
+remote = False
+if "LOCATION" in environ:
+	if environ['LOCATION'] == "remote":
 		remote = True
 
-FLASK_APP            = Flask(__name__)
 FLASK_APP.secret_key = 'hunter2'
 
 if __name__ == "__main__":
 	FLASK_APP.run(debug=True)
 
-SPORTSRADAR_API_KEY = open(sportsradar_key_file, "r").read().rstrip("\n\r")
 
-FUNNY_PHRASES = ["Go Dawgs!", "Don't worry, we're all champions of life.", "All aboard the Gus Bus!", "D I L L Y D I L L Y.",
-"Shark Lovers Only.", "This program is approved by Joey Freshwater.", "Five Star Hearts ONLY.", "*Dooley takes note*", "7-3 Rutgers.",
-"M 0 - 0 N", "M 0w0 N... whats this.", "Verne Lundquist: Oh no!", "Gary: Notice Me Saban.", "All Alabama has on the field is fat guys.",
-"Sam Darnold wouldn't want it any other way.", "You know who would've made a great CFB Quaterback? Brett Farve.", "OwO what's this.",
-"Beat the War-tigle crap out of em'.", "UCF: 2017-8 National Champions.", "Les Miles is eating grass again.", "The kicker got ejected for targeting.",
-"We want BAMA.", "Vandy wanted Bama, Vandy got Bama.", "Missouri belongs in the SEC.", "Troy > LSU > Auburn > Bama.", "Like they say, it's an ongoing investigation."
-]
 
 def render_from_fake_games(sheet_id, sheet_name, season, week):
 
@@ -43,7 +42,7 @@ def render_from_fake_games(sheet_id, sheet_name, season, week):
 	#@ToDo: rename templates to something more fitting
 
 
-	scribe    = SheetScribeService(sheet_id, 'https://www.googleapis.com/auth/spreadsheets', None)
+	scribe    = SheetScribeService(sheet_id, SCOPE, None)
 	sub_sheet = sheet_name
 
 	#We need to wreck our sheet's A-H
@@ -133,7 +132,7 @@ def render_from_fake_games(sheet_id, sheet_name, season, week):
 	return render_template('flask.html',
 		seq=fake_games,
 		remote=remote,
-		phrase=choice(FUNNY_PHRASES),
+		phrase=choice(PHRASES),
 		sheet_id_truncated=sheet_id[0:7] + "...",
 		sub_sheet=sheet_name,
 		season=season,
@@ -144,7 +143,7 @@ def render_from_real_games(sheet_id, sheet_name, season, week):
 
 	#@ToDo Move writing names and ranks into /football_post function
 
-	scribe    = SheetScribeService(sheet_id, 'https://www.googleapis.com/auth/spreadsheets', None)
+	scribe    = SheetScribeService(sheet_id, SCOPE, None)
 	sub_sheet = sheet_name
 
 	#We need to wreck our sheet's A-H
@@ -209,7 +208,7 @@ def render_from_real_games(sheet_id, sheet_name, season, week):
 	return render_template('flask.html',
 		seq=real_games,
 		remote=remote,
-		phrase=choice(FUNNY_PHRASES),
+		phrase=choice(PHRASES),
 		sheet_id_truncated=sheet_id[0:7] + "...",
 		sub_sheet=sheet_name,
 		season=season,
