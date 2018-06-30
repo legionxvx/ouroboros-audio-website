@@ -19,7 +19,6 @@ SCRIPT_DIR = path.dirname(path.abspath(__file__))
 
 class FakeGameGenerator:
 
-	#@ToDo: col width 80
 	#@ToDo: Improve chance generation
 	#ToDo: Improve score generator
 
@@ -121,10 +120,9 @@ class FakeGameGenerator:
 	def __del__(self):
 		print('%s deconstructed' % (self))
 
-class Game:
+class SportsRadarGame:
 
 	#@ToDo: col width 80
-	#@ToDo: clean up ugly ranking/important system
 	#@ToDo: implement format_time()
 
 	fbs_json_path = path.join(SCRIPT_DIR, 'sports_radar_fbs_dict.json')
@@ -137,6 +135,8 @@ class Game:
 
 	#for organizing game data
 	def __init__(self, game, rankings):
+		self.game = game
+		self.rankings = rankings
 		self.home_acr    = game['home']
 		self.away_acr    = game['away']
 		self.home_team   = self.lookup_full_name(game['home'])
@@ -145,14 +145,37 @@ class Game:
 		self.gameTime    = self.format_time(game['scheduled'])
 		self.awayRank    = 'U'
 		self.homeRank    = 'U'
-		self.home_points = game['home_points'] if 'home_points' in game.keys() else ''
-		self.away_points = game['away_points'] if 'away_points' in game.keys() else ''
+		self.home_points = self.points('home')
+		self.away_points = self.points('away')
 		self.isImportant = True if 'title' in game.keys() else False
-		self.isRanked    = True if (rankings) and (self.home_acr in rankings.keys()) or (self.away_acr in rankings.keys()) else False
+		self.isRanked    = self.ranked(self.home_acr, self.away_acr)
 
 		if self.isRanked and rankings:
-			self.awayRank = str(rankings[self.away_acr]) if (self.away_acr in rankings.keys()) else 'U'
-			self.homeRank = str(rankings[self.home_acr]) if (self.home_acr in rankings.keys()) else 'U'
+			self.awayRank = self.get_team_rank(self.away_acr)
+			self.homeRank = self.get_team_rank(self.home_acr)
+
+	def points(self, team):
+		if team+'_points' in self.game.keys():
+			return game[team+'_points']
+		else:
+			return ''
+
+	def ranked_game(self, team_1, team_2):
+		rank_keys = self.rankings.keys()
+		if (self.rankings):
+			if (team_1 in rank_keys) or (team_2 in rank_keys):
+				return True
+			else:
+				return False
+		else:
+			return False
+
+	def get_team_rank(self, team_acr):
+		rank_keys = self.rankings.keys()
+		if team_acr in rank_keys:
+			return self.rankings[team_acr]
+		else:
+			return 'U'
 
 	#@ToDo: Implement this fully
 	def format_time(self, unformatted):
@@ -269,9 +292,9 @@ class SheetScribeService:
 
 		if not self.creds or self.creds.invalid:
 			try:
-				client.flow_from_clientsecrets(
-					)
-				self.flow  = client.flow_from_clientsecrets('client_secret.json', self.scope)
+				client.flow_from_clientsecrets()
+				self.flow  = client.flow_from_clientsecrets('client_secret.json',
+															self.scope)
 				self.creds = tools.run_flow(self.flow, self.storage)
 				self.auth  = True
 			except InvalidClientSecretsError:

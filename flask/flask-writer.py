@@ -1,6 +1,6 @@
 from random import choice
 from os import path, environ
-from service_modules import Game, SportsRadarService, SheetScribeService, FakeGameGenerator
+from service_modules import SportsRadarGame, SportsRadarService, SheetScribeService, FakeGameGenerator
 from flask import Flask, render_template, request, session
 
 #@ToDo: Force max col width of 80
@@ -26,12 +26,10 @@ if "LOCATION" in environ:
 	if environ['LOCATION'] == "remote":
 		remote = True
 
-FLASK_APP.secret_key = 'hunter2'
-
 if __name__ == "__main__":
 	FLASK_APP.run(debug=True)
 
-
+FLASK_APP.secret_key = 'hunter2'
 
 def render_from_fake_games(sheet_id, sheet_name, season, week):
 
@@ -171,7 +169,7 @@ def render_from_real_games(sheet_id, sheet_name, season, week):
 
 	for game in games:
 
-		game_instance = Game(game, radar_service.ranks)
+		game_instance = SportsRadarGame(game, radar_service.ranks)
 
 		#ToDo: If game_instance.isImportant it must be a bowl game
 		#we need to pass the title into our flask.html to signify this
