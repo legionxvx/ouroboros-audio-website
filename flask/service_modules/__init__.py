@@ -12,7 +12,6 @@ from oauth2client import file, client, tools
 from apiclient.discovery import build, HttpError
 from oauth2client.clientsecrets import InvalidClientSecretsError
 
-#@ToDo: Force max col width of 80
 #@ToDo: Make classes work within a context manager?
 
 SCRIPT_DIR = path.dirname(path.abspath(__file__))
@@ -25,10 +24,6 @@ class FakeGameGenerator:
 	fbs_json = open(fbs_json_path, 'r').read()
 
 	def __init__(self):
-		#it is important that we don't remove any init choices
-		#from our lists, to protect the integrity of the
-		#generate_new_fake_game() funtion, which does keep
-		#track of which ranks have been used
 
 		self.FBS_TEAMS = loads(self.fbs_json)
 		self.RANKS = [i for i in range(1, 26)]
@@ -124,7 +119,6 @@ class FakeGameGenerator:
 
 class SportsRadarGame:
 
-	#@ToDo: col width 80
 	#@ToDo: implement format_time()
 
 	fbs_json_path = path.join(SCRIPT_DIR, 'sports_radar_fbs_dict.json')
@@ -179,7 +173,6 @@ class SportsRadarGame:
 		else:
 			return 'U'
 
-	#@ToDo: Implement this fully
 	def format_time(self, unformatted):
 		formatted = unformatted[0:16]
 		return formatted
@@ -200,7 +193,6 @@ class SportsRadarService:
 	#A Class for handling Sports Radar API calls
 
 	#@ToDo: Rename me to SportsRadar NCAA Service?
-	#@ToDo: proper error message reporting
 
 	def __init__(self, sports_radar_api_key):
 		self.raw_request_data = {}
@@ -279,50 +271,55 @@ class SportsRadarService:
 class SheetScribeService:
 
 	#Google sheets wriiiiiiiterrrrrr, Google Sheets wriiiiiiiterrrr
-	#@ToDo: col width 80
 	#@ToDo: condense *_column_*() into one function with column argument
-	#@ToDo: cleanup var names acording to book
 
 	def __init__(self, sheet_id, scope, apiKey):
+		self.secrets       = 'client_secret.json'
 		self.spreadsheetId = sheet_id
-		self.storage       = file.Storage('credentials.json')
+		self.storage       = file.Storage(self.secrets_file)
 		self.creds         = self.storage.get()
 		self.scope         = scope
 		self.apiCalls      = 0
-		self.auth        = False
+		self.auth          = False
 
 		if not self.creds or self.creds.invalid:
 			try:
 				client.flow_from_clientsecrets()
-				self.flow  = client.flow_from_clientsecrets('client_secret.json', self.scope)
-				self.creds = tools.run_flow(self.flow, self.storage)
+				flow  = client.flow_from_clientsecrets(self.secrets, self.scope)
+				self.creds = tools.run_flow(flow, self.storage)
 				self.auth  = True
 			except InvalidClientSecretsError:
 				print("Invalid OAuth2 and Client Secret credentials")
 				self.auth = False
 				return
 
-
-		self.GoogleSheetsService = build('sheets', 'v4', http=self.creds.authorize(Http()))
-		self.sheetPtr            = self.GoogleSheetsService.spreadsheets().values()
-		self.auth              = True
+		self.build = build('sheets', 'v4', http=self.creds.authorize(Http()))
+		self.sheetPtr = self.build.spreadsheets().values()
+		self.auth = True
 
 	def get_sheet_values(self, sheet):
-		response        = self.sheetPtr.get(spreadsheetId=self.spreadsheetId,range=str(sheet)).execute()
+		response        = self.sheetPtr.get(spreadsheetId=self.spreadsheetId,
+											range=str(sheet)
+											).execute()
 		sleep(0.26)
 		self.apiCalls += 1
 		return response
 
 	def get_range_values(self, sheet, range):
 		requested_range = str(sheet) + '!' + str(range)
-		response        = self.sheetPtr.get(spreadsheetId=self.spreadsheetId,range=requested_range).execute()
+		response        = self.sheetPtr.get(spreadsheetId=self.spreadsheetId,
+											range=requested_range
+											).execute()
 		sleep(0.26)
 		self.apiCalls += 1
 		return response.get('values') if response.get('values') is not None else 0
 
 	def get_column_range_values(self, sheet, range):
 		requested_range = str(sheet) + '!' + str(range)
-		response        = self.sheetPtr.get(spreadsheetId=self.spreadsheetId,range=requested_range, body={'majorDimension':'columns'}).execute()
+		response        = self.sheetPtr.get(spreadsheetId=self.spreadsheetId,
+											range=requested_range,
+											body={'majorDimension':'columns'}
+											).execute()
 		sleep(0.26)
 		self.apiCalls += 1
 		return response
@@ -330,7 +327,12 @@ class SheetScribeService:
 	def write_column_range_values(self, sheet, range, values):
 		print("Writing:", values, 'in range:', range, 'majorDimension=columns')
 		requested_range = str(sheet) + '!' + str(range)
-		response        = self.sheetPtr.update(spreadsheetId=self.spreadsheetId,range=requested_range,valueInputOption='USER_ENTERED',body={'values':values, 'majorDimension':'columns'}).execute()
+		response        = self.sheetPtr.update(spreadsheetId=self.spreadsheetId,
+											   range=requested_range,
+											   valueInputOption='USER_ENTERED',
+											   body={'values':values,
+											   		 'majorDimension':'columns'}
+											   ).execute()
 		sleep(0.26)
 		self.apiCalls += 1
 		return response
@@ -338,7 +340,11 @@ class SheetScribeService:
 	def write_row_range_values(self, sheet, range, values):
 		print("Writing:", values, 'in range:', range, ', majorDimension=rows')
 		requested_range = str(sheet) + '!' + str(range)
-		response        = self.sheetPtr.update(spreadsheetId=self.spreadsheetId,range=requested_range,valueInputOption='USER_ENTERED',body={'values':values}).execute()
+		response        = self.sheetPtr.update(spreadsheetId=self.spreadsheetId,
+											   range=requested_range,
+											   valueInputOption='USER_ENTERED',
+											   body={'values':values}
+											   ).execute()
 		sleep(0.26)
 		self.apiCalls += 1
 		return response
@@ -346,7 +352,9 @@ class SheetScribeService:
 	def clear_column_values(self, sheet, range):
 		payload = {}
 		requested_range = str(sheet) + '!' + str(range)
-		response        = self.sheetPtr.clear(spreadsheetId=self.spreadsheetId, range=requested_range, body=payload).execute()
-
+		response        = self.sheetPtr.clear(spreadsheetId=self.spreadsheetId,
+											  range=requested_range,
+											  body=payload
+											  ).execute()
 	def __del__(self):
 		print('%s deconstructed. Calls to API: %s.' % (self, self.apiCalls))
