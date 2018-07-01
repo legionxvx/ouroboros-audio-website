@@ -191,7 +191,6 @@ class SportsRadarGame:
 class SportsRadarService:
 
 	#A Class for handling Sports Radar API calls
-
 	#@ToDo: Rename me to SportsRadar NCAA Service?
 
 	def __init__(self, sports_radar_api_key):
@@ -275,8 +274,9 @@ class SheetScribeService:
 
 	def __init__(self, sheet_id, scope, apiKey):
 		self.secrets       = 'client_secret.json'
+		self.credentials   = 'credentials.json'
 		self.spreadsheetId = sheet_id
-		self.storage       = file.Storage(self.secrets_file)
+		self.storage       = file.Storage(self.credentials)
 		self.creds         = self.storage.get()
 		self.scope         = scope
 		self.apiCalls      = 0
@@ -285,41 +285,41 @@ class SheetScribeService:
 		if not self.creds or self.creds.invalid:
 			try:
 				client.flow_from_clientsecrets()
-				flow  = client.flow_from_clientsecrets(self.secrets, self.scope)
-				self.creds = tools.run_flow(flow, self.storage)
+				self.flow  = client.flow_from_clientsecrets(self.secrets, self.scope)
+				self.creds = tools.run_flow(self.flow, self.storage)
 				self.auth  = True
 			except InvalidClientSecretsError:
 				print("Invalid OAuth2 and Client Secret credentials")
 				self.auth = False
 				return
 
-		self.build = build('sheets', 'v4', http=self.creds.authorize(Http()))
-		self.sheetPtr = self.build.spreadsheets().values()
+		self.built = build('sheets', 'v4', http=self.creds.authorize(Http()))
+		self.sheetPtr = self.built.spreadsheets().values()
 		self.auth = True
 
 	def get_sheet_values(self, sheet):
-		response        = self.sheetPtr.get(spreadsheetId=self.spreadsheetId,
-											range=str(sheet)
-											).execute()
+		response = self.sheetPtr.get(spreadsheetId=self.spreadsheetId,
+									 range=str(sheet)
+									 ).execute()
 		sleep(0.26)
 		self.apiCalls += 1
 		return response
 
 	def get_range_values(self, sheet, range):
 		requested_range = str(sheet) + '!' + str(range)
-		response        = self.sheetPtr.get(spreadsheetId=self.spreadsheetId,
-											range=requested_range
-											).execute()
+		response = self.sheetPtr.get(spreadsheetId=self.spreadsheetId,
+									 range=requested_range
+									 ).execute()
 		sleep(0.26)
 		self.apiCalls += 1
 		return response.get('values') if response.get('values') is not None else 0
 
 	def get_column_range_values(self, sheet, range):
 		requested_range = str(sheet) + '!' + str(range)
-		response        = self.sheetPtr.get(spreadsheetId=self.spreadsheetId,
-											range=requested_range,
-											body={'majorDimension':'columns'}
-											).execute()
+		response = self.sheetPtr.get(spreadsheetId=self.spreadsheetId,
+									 range=requested_range,
+									 body={'majorDimension':'columns'}
+									 ).execute()
 		sleep(0.26)
 		self.apiCalls += 1
 		return response
@@ -327,12 +327,12 @@ class SheetScribeService:
 	def write_column_range_values(self, sheet, range, values):
 		print("Writing:", values, 'in range:', range, 'majorDimension=columns')
 		requested_range = str(sheet) + '!' + str(range)
-		response        = self.sheetPtr.update(spreadsheetId=self.spreadsheetId,
-											   range=requested_range,
-											   valueInputOption='USER_ENTERED',
-											   body={'values':values,
-											   		 'majorDimension':'columns'}
-											   ).execute()
+		response = self.sheetPtr.update(spreadsheetId=self.spreadsheetId,
+										range=requested_range,
+										valueInputOption='USER_ENTERED',
+										body={'values':values,
+											  'majorDimension':'columns'}
+											  ).execute()
 		sleep(0.26)
 		self.apiCalls += 1
 		return response
@@ -340,11 +340,11 @@ class SheetScribeService:
 	def write_row_range_values(self, sheet, range, values):
 		print("Writing:", values, 'in range:', range, ', majorDimension=rows')
 		requested_range = str(sheet) + '!' + str(range)
-		response        = self.sheetPtr.update(spreadsheetId=self.spreadsheetId,
-											   range=requested_range,
-											   valueInputOption='USER_ENTERED',
-											   body={'values':values}
-											   ).execute()
+		response = self.sheetPtr.update(spreadsheetId=self.spreadsheetId,
+										range=requested_range,
+										valueInputOption='USER_ENTERED',
+										body={'values':values}
+										).execute()
 		sleep(0.26)
 		self.apiCalls += 1
 		return response
@@ -352,9 +352,9 @@ class SheetScribeService:
 	def clear_column_values(self, sheet, range):
 		payload = {}
 		requested_range = str(sheet) + '!' + str(range)
-		response        = self.sheetPtr.clear(spreadsheetId=self.spreadsheetId,
-											  range=requested_range,
-											  body=payload
-											  ).execute()
+		response = self.sheetPtr.clear(spreadsheetId=self.spreadsheetId,
+									   range=requested_range,
+									   body=payload
+									   ).execute()
 	def __del__(self):
 		print('%s deconstructed. Calls to API: %s.' % (self, self.apiCalls))
