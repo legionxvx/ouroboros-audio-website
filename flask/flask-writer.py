@@ -61,7 +61,8 @@ def render_from_fake_games(sheet_id, sheet_name, season, week):
 	try:
 		away_already_there = scribe.get_range_values(sub_sheet, "D3:D250")
 		home_already_there = scribe.get_range_values(sub_sheet, "H3:H250")
-		scribe.clear_column_values(sheet_name,'H3:H1000')
+		scribe.clear_column_values(sub_sheet,'D3:D1000')
+		scribe.clear_column_values(sub_sheet,'H3:H1000')
 	except HttpError as e:
 		return render_template('error.html',
 								remote=remote,
@@ -69,6 +70,11 @@ def render_from_fake_games(sheet_id, sheet_name, season, week):
 								instance=scribe,
 								error=e
 								)
+
+	#Assuming scribe service didn't bail, let's grab the games
+	# radar_service = SportsRadarService(SPORTSRADAR_API_KEY)
+	# games         = radar_service.get_games(season, week)
+	# ranks         = radar_service.get_ranks(season, week)
 
 	fake_games = []
 	away_ranks = []
@@ -152,13 +158,33 @@ def render_from_real_games(sheet_id, sheet_name, season, week):
 
 	#We need to wreck our sheet's A-H
 	#columns to make way for new info
-	for column in ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']:
+	for column in ['A', 'B', 'C', 'E', 'F', 'G']:
 		#Check for fidelity
 		try:
-			scribe.clear_column_values(sheet_name, '%s3:%s1000' % (column, column))
-		except HttpError:
-			#@ToDo: Proper error_sheet.html
-			return "<h1>Request spreadsheet entity %s or sub_sheet %s not found.</h1>" % (sheet_id, sheet_name)
+			scribe.clear_column_values(sheet_name,
+									   '%s3:%s1000' %
+									   (column, column)
+									   )
+		except HttpError as e:
+			return render_template('error.html',
+									remote=remote,
+									scribe=true,
+									instance=scribe,
+									error=e
+									)
+
+		away_already_there = None
+		home_already_there = None
+		try:
+			away_already_there = scribe.get_range_values(sub_sheet, "D3:D250")
+			home_already_there = scribe.get_range_values(sub_sheet, "H3:H250")
+		except HttpError as e:
+			return render_template('error.html',
+									remote=remote,
+									scribe=true,
+									instance=scribe,
+									error=e
+									)
 
 	#Assuming scribe service didn't bail, let's grab the games
 	radar_service = SportsRadarService(SPORTSRADAR_API_KEY)
@@ -172,25 +198,45 @@ def render_from_real_games(sheet_id, sheet_name, season, week):
 	home_teams = []
 
 	if not(games):
-		#@ToDo: Proper error_sheet.html
-		return "Radar Service Module returned with: %s. Go back to setup." % (str(games))
-
+		return render_template('error.html',
+								remote=remote,
+								sports_radar=true,
+								instance=radar_service,
+								error="returned: %s" % (games)
+								)
+	i = 0
 	for game in games:
+
+		info = {}
 
 		game_instance = SportsRadarGame(game, radar_service.ranks)
 
 		#ToDo: If game_instance.isImportant it must be a bowl game
 		#we need to pass the title into our flask.html to signify this
+		if away_already_there != 0 and away_already_there[i][0] != "":
+			game_instance.away_points = int(away_already_there[i][0])
+
+		if home_already_there != 0 and home_already_there[i][0] != "":
+			game_instance.home_points = int(home_already_there[i][0])
+
+		#ToDo: If game_instance.isImportant it must be a bowl game
+		#we need to pass the title into our flask.html to signify this
 		if (game_instance.isRanked) or (game_instance.isImportant):
-			#passing the whole real_games list into
-			#flask.html means that we need to parse it there
-			#and not here, saving us a bunch of time
-			real_games.append(game_instance)
+			info['away_team'] = game_instance.away_team
+			info['home_team'] = game_instance.home_team
+			info['awayRank'] = game_instance.awayRank
+			info['homeRank'] = game_instance.homeRank
+			info['away_points'] = game_instance.away_points
+			info['home_points'] = game_instance.home_points
+			info['gameTime'] = game_instance.gameTime
+			info['gameStatus'] = game_instance.gameStatus
+			real_games.append(info)
 
 			away_ranks.append(game_instance.awayRank)
 			away_teams.append(game_instance.away_team)
 			home_ranks.append(game_instance.homeRank)
 			home_teams.append(game_instance.home_team)
+			i += 1
 
 	#wrap our payloads for google sheets
 	away_ranks_payload = [away_ranks]
@@ -287,7 +333,6 @@ def football_post():
 
 			#create a new scribe
 			scribe = SheetScribeService(session['sheet_id'], 'https://www.googleapis.com/auth/spreadsheets', None)
-
 			#write our wrapped payloads
 			try:
 				#same fidelity check from earlier

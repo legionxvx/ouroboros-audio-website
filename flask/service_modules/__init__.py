@@ -144,7 +144,7 @@ class SportsRadarGame:
 		self.home_points = self.points('home')
 		self.away_points = self.points('away')
 		self.isImportant = True if 'title' in game.keys() else False
-		self.isRanked    = self.ranked(self.home_acr, self.away_acr)
+		self.isRanked    = self.ranked_game(self.home_acr, self.away_acr)
 
 		if self.isRanked and rankings:
 			self.awayRank = self.get_team_rank(self.away_acr)
@@ -152,7 +152,7 @@ class SportsRadarGame:
 
 	def points(self, team):
 		if team+'_points' in self.game.keys():
-			return game[team+'_points']
+			return self.game[team+'_points']
 		else:
 			return ''
 
