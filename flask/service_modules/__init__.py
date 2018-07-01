@@ -21,18 +21,17 @@ class FakeGameGenerator:
 
 	#@ToDo: Improve chance generation
 	#ToDo: Improve score generator
-
 	fbs_json_path = path.join(SCRIPT_DIR, 'fakegames_fbs_dict.json')
 	fbs_json = open(fbs_json_path, 'r').read()
-
-	FBS_TEAMS = loads(fbs_json)
-	RANKS = [i for i in range(1, 26)]
 
 	def __init__(self):
 		#it is important that we don't remove any init choices
 		#from our lists, to protect the integrity of the
 		#generate_new_fake_game() funtion, which does keep
 		#track of which ranks have been used
+
+		self.FBS_TEAMS = loads(self.fbs_json)
+		self.RANKS = [i for i in range(1, 26)]
 
 		fbs_dict_copy         = copy(self.FBS_TEAMS)
 		self.home_team_choice = choice(fbs_dict_copy.keys())
@@ -71,6 +70,9 @@ class FakeGameGenerator:
 			self.awayRank    = self.generate_rank()
 			self.home_points = self.fake_score(self.homeRank)
 			self.away_points = self.fake_score(self.awayRank)
+
+	def refill(self):
+		self.RANKS = [i for i in range(1, 26)]
 
 
 	def lookup_full_name(self, acronym):
@@ -183,7 +185,6 @@ class SportsRadarGame:
 		return formatted
 
 	def lookup_full_name(self, acronym):
-
 		if acronym in self.FBS_TEAMS.keys():
 			return self.FBS_TEAMS[acronym]
 		elif acronym in self.FCS_TEAMS.keys():
@@ -293,8 +294,7 @@ class SheetScribeService:
 		if not self.creds or self.creds.invalid:
 			try:
 				client.flow_from_clientsecrets()
-				self.flow  = client.flow_from_clientsecrets('client_secret.json',
-															self.scope)
+				self.flow  = client.flow_from_clientsecrets('client_secret.json', self.scope)
 				self.creds = tools.run_flow(self.flow, self.storage)
 				self.auth  = True
 			except InvalidClientSecretsError:
