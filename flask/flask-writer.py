@@ -43,24 +43,24 @@ def render_from_fake_games(sheet_id, sheet_name, season, week):
 
 	#We need to wreck our sheet's A-H
 	#columns to make way for new info
-	for column in ['A', 'B', 'C', 'E', 'F', 'G']:
-		#Check for fidelity
-		try:
-			scribe.clear_column_values(sheet_name, '%s3:%s1000' % (column, column))
-		except HttpError:
-			#@ToDo: Proper error_sheet.html
-			return "<h1>Request spreadsheet entity %s or sub_sheet %s not found.</h1>" % (sheet_id, sub_sheet)
+	# for column in ['A', 'B', 'C', 'E', 'F', 'G']:
+	# 	#Check for fidelity
+	# 	try:
+	# 		scribe.clear_column_values(sheet_name, '%s3:%s1000' % (column, column))
+	# 	except HttpError:
+	# 		#@ToDo: Proper error_sheet.html
+	# 		return "<h1>Request spreadsheet entity %s or sub_sheet %s not found.</h1>" % (sheet_id, sub_sheet)
 
-	already_there = None
-	try:
-		already_there = scribe.get_range_values(sub_sheet, "D3:D28")
-	except HttpError:
-		return "<h1>Request spreadsheet entity %s or sub_sheet vals %s not found.</h1>" % (sheet_id, already_there)
-	print("VALS", already_there)
-
-	if already_there != 0:
-		for x in range(len(already_there)):
-			print("Val %s" % (already_there[x]))
+	# already_there = None
+	# try:
+	# 	already_there = scribe.get_range_values(sub_sheet, "D3:D28")
+	# except HttpError:
+	# 	return "<h1>Request spreadsheet entity %s or sub_sheet vals %s not found.</h1>" % (sheet_id, already_there)
+	# print("VALS", already_there)
+	#
+	# if already_there != 0:
+	# 	for x in range(len(already_there)):
+	# 		print("Val %s" % (already_there[x]))
 
 	#Assuming scribe service didn't bail, let's grab the games
 	#radar_service = SportsRadarService(SPORTSRADAR_API_KEY)
@@ -116,10 +116,10 @@ def render_from_fake_games(sheet_id, sheet_name, season, week):
 
 	#since we made it this far, we probably
 	#don't need a fidelity check
-	scribe.write_column_range_values(sub_sheet, 'B3', away_ranks_payload)
-	scribe.write_column_range_values(sub_sheet, 'C3', away_teams_payload)
-	scribe.write_column_range_values(sub_sheet, 'F3', home_ranks_payload)
-	scribe.write_column_range_values(sub_sheet, 'G3', home_teams_payload)
+	#scribe.write_column_range_values(sub_sheet, 'B3', away_ranks_payload)
+	#scribe.write_column_range_values(sub_sheet, 'C3', away_teams_payload)
+	#scribe.write_column_range_values(sub_sheet, 'F3', home_ranks_payload)
+	#scribe.write_column_range_values(sub_sheet, 'G3', home_teams_payload)
 
 	#increment our counters for fun stats in post.html
 	session['google_sheets_api_calls'] += scribe.apiCalls
