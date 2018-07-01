@@ -3,11 +3,10 @@ from os import path, environ
 from service_modules import SportsRadarGame, SportsRadarService, SheetScribeService, FakeGameGenerator
 from flask import Flask, render_template, request, session
 
-#@ToDo: Force max col width of 80
 #@ToDo: rename templates to something more fitting
 #@ToDo: Rename flask-writer to YASSP (yet another score storing program)
 #@ToDo: Comment on ALL THE THINGS
-#@ToDo: Imlement reading back of scores
+#@ToDo: Secret passcode for friends
 
 SCRIPT_DIR = path.dirname(path.abspath(__file__))
 
@@ -296,14 +295,21 @@ def flask_post():
 		session['google_sheets_api_calls'] = 0
 		session['sportsradar_api_calls']   = 0
 
-		#print('Posted - ID: %s, Name: %s, Season: %s, Week: %s.' % (sheet_id, sheet_name, season, week))
-
 		if 'FAKEGAMES' in request.form:
 			if request.form['FAKEGAMES']:
-				return render_from_fake_games(sheet_id, sheet_name, season, week)
+				return render_from_fake_games(sheet_id,
+				 							 sheet_name,
+											 season,
+											 week
+											 )
 
-		#render_from_real_games() will return a render_template(flask.html)
-		return render_from_real_games(sheet_id, sheet_name, season, week)
+		#render_from_real/fake_games() will return with flask.html
+		#but it needs to be built first using one of our render functions
+		return render_from_real_games(sheet_id,
+									  sheet_name,
+									  season,
+									  week
+									  )
 
 @FLASK_APP.route("/")
 @FLASK_APP.route("/football_post", methods=['GET', 'POST'])
@@ -332,15 +338,24 @@ def football_post():
 			home_score_payload = [home_scores]
 
 			#create a new scribe
-			scribe = SheetScribeService(session['sheet_id'], 'https://www.googleapis.com/auth/spreadsheets', None)
+			scribe = SheetScribeService(session['sheet_id'], SCOPE, None)
 			#write our wrapped payloads
 			try:
-				#same fidelity check from earlier
-				scribe.write_column_range_values(session['sheet_name'], 'D3', away_score_payload)
-				scribe.write_column_range_values(session['sheet_name'], 'H3', home_score_payload)
+				scribe.write_column_range_values(session['sheet_name'],
+												'D3',
+												away_score_payload
+												)
+				scribe.write_column_range_values(session['sheet_name'],
+												'H3',
+												home_score_payload
+												)
 			except HttpError:
-				#@ToDo: Proper error_sheet.html
-				return "<h1>Request spreadsheet entity %s or sub_sheet %s not found.</h1>" % (session['sheet_id'], session['sheet_name'])
+				return render_template('error.html',
+										remote=remote,
+										scribe=true,
+										instance=scribe,
+										error=e
+										)
 
 			#Increment our counter for fun stats
 			session['google_sheets_api_calls'] += scribe.apiCalls
@@ -350,4 +365,9 @@ def football_post():
 				google_sheets_api_calls=session['google_sheets_api_calls']
 				)
 		else:
-			return "response ERR"
+			return render_template('error.html',
+									remote=remote,
+									scribe=true,
+									instance=scribe,
+									error="request method: %s" % (request.method)
+									)
