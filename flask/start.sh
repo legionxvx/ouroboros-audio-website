@@ -6,4 +6,4 @@ rm flask-writer.pyc
 export LOCATION=local
 export FLASK_ENV=development
 export FLASK_APP=flask-writer.py
-python -m flask run --host=192.168.1.116
+python -m flask run

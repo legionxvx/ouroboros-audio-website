@@ -60,8 +60,6 @@ def render_from_fake_games(sheet_id, sheet_name, season, week):
 	try:
 		away_already_there = scribe.get_range_values(sub_sheet, "D3:D250")
 		home_already_there = scribe.get_range_values(sub_sheet, "H3:H250")
-		scribe.clear_column_values(sub_sheet,'D3:D1000')
-		scribe.clear_column_values(sub_sheet,'H3:H1000')
 	except HttpError as e:
 		return render_template('error.html',
 								remote=remote,
