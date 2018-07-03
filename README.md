@@ -11,7 +11,7 @@ Development Map:
 * Compress media
 * Navbar
 * Javascript to help fill in the gaps
-3) ~~Node.js or React app to show off skills.~~ (I may have jumped the gun on this part of the development plan... see flask/)
+3) ~~Node.js or React app to show off skills.~~ (I may have jumped the gun on this part of the development plan... see https://github.com/legionxvx/yassp)
 4) ?????.
 5) Profit.
 
