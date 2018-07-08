@@ -93,6 +93,38 @@ ol, ul {
 	text-align: center;
 }
 
+.white-bg {
+	background-color: rgba(255, 255, 255, 0.075);
+}
+
+.cent {
+	text-align: center;
+}
+
+.borderProj {
+	border-width: 5px;
+	border-style: solid;
+    padding-left: 70px;
+    padding-right: 70px;
+}
+
+.borderProj .row, .borderProj h3, .borderProj p {
+  -webkit-transition: -webkit-transform .15s ease;
+  -moz-transition: -moz-transform .15s ease;
+  -o-transition: -o-transform .15s ease;
+  -ms-transition: -ms-transform .15s ease;
+  transition: transform .15s ease;
+  position: relative;
+}
+.borderProj .row:hover, .borderProj h3, .borderProj p {
+  -webkit-transform: scale(1.05);
+  -moz-transform: scale(1.05);
+  -o-transform: scale(1.05);
+  -ms-transform: scale(1.05);
+  transform: scale(1.05);
+  z-index: 5;
+}
+
 .col-sm a {
 	border-bottom: none;
 	display: block;
