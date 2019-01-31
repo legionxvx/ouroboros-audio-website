@@ -41,7 +41,7 @@ svg {
     height: 80px;
     background: white;
     border-radius: 99%;
-    margin: 0% 0 0 -30%;
+    margin: 0% 15 15 -30%;
   }
   @keyframes rotate2 {
     0%    { transform: rotate(0deg);  }
@@ -52,13 +52,13 @@ svg {
   circle {
     fill: white;
     stroke: black;
-    stroke-width: 2;
-    stroke-dasharray: 250;
+    stroke-width: 1.5;
+    stroke-dasharray: 500;
     stroke-dashoffset: 1000;
-    animation: rotate 5s linear infinite;
+    animation: rotate3 5s linear infinite;
   }
   
-  @keyframes rotate {
+  @keyframes rotate3 {
     to {
       stroke-dashoffset: 0;
     }
