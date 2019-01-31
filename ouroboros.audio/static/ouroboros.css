@@ -54,14 +54,23 @@ svg {
     stroke: black;
     stroke-width: 1.5;
     stroke-dasharray: 500;
-    stroke-dashoffset: 1000;
+    stroke-dashoffset: 0;
+    transform-origin: center;
     animation: rotate3 5s linear infinite;
   }
   
-  @keyframes rotate3 {
-    to {
-      stroke-dashoffset: 0;
+    circle:hover {
+      transform: scale(2, 2);
+      animation: ease-in 1s linear;
+      /* animation: none; */
     }
+  
+  @keyframes rotate3 {
+    /* to {
+      stroke-dashoffset: 1000;
+    } */
+    0%    { transform: rotate(0deg);  }
+    100%  { transform: rotate(360deg);  }
   }
 
   
