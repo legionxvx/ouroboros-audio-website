@@ -1,6 +1,6 @@
 @keyframes spin { 
     100% { 
-        transform: rotate(-360deg); transform:rotate(-360deg); 
+        transform: rotate(360deg); transform:rotate(360deg); 
     } 
 }
 
@@ -33,6 +33,7 @@
 .mouth {
     height: 1em;
     width: 1em;
+    border-radius: 30%;
     border-right: 4px solid #000;
     border-bottom: 4px solid #000;
     transform: rotate(225deg);
@@ -44,5 +45,5 @@
     border-radius: 50%;
     background: #000;
     border: 1px solid #000;
-    transform: translate(-2px, -2px)
+    transform: translate(16px, 19px)
 }
