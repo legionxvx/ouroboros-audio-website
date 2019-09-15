@@ -1,4 +1,8 @@
-@keyframes spin { 100% { -webkit-transform: rotate(360deg); transform:rotate(360deg); } }
+@keyframes spin { 
+    100% { 
+        transform: rotate(-360deg); transform:rotate(-360deg); 
+    } 
+}
 
 #ouroboros {
     height: 500px;
@@ -24,7 +28,6 @@
     width: 95%;
     height: 95%;
     border-radius: 50%;
-    /* animation: spin 5s linear infinite; */
 }
 
 .mouth {
@@ -32,7 +35,7 @@
     width: 1em;
     border-right: 4px solid #000;
     border-bottom: 4px solid #000;
-    transform: rotate(45deg);
+    transform: rotate(225deg);
 }
 
 .eye {
